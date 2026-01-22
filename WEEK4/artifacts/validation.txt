@@ -1,0 +1,33 @@
+═══════════════════════════════════════════════════════════════
+  VALIDATION REPORT - STARTERKIT S4 (WEEK 4)
+  Generated: 2026-01-03 13:02:45
+═══════════════════════════════════════════════════════════════
+
+PORTS USED:
+  TCP TEXT:   5400 (protocol length-prefixed)
+  TCP BINARY: 5401 (header 14B + CRC32)
+  UDP SENSOR: 5402 (datagram 23B + CRC32)
+
+IP PLAN (Mininet):
+  Network:    10.0.4.0/24
+  Gateway:    10.0.4.1
+  Server:     10.0.4.100
+  Hosts:      h1=10.0.4.11, h2=10.0.4.12, h3=10.0.4.13
+
+ARTIFACTS GENERATED:
+
+FILES:
+  [OK] demo.log (132 lines)
+  [OK] demo.pcap (0 bytes)
+
+PROTOCOL TESTS:
+  [OK] TEXT PING successful
+  [OK] TEXT SET successful
+  [OK] TEXT COUNT successful
+  [OK] BINARY ECHO successful
+  [OK] UDP sensor data received
+  [OK] CRC error detection working
+
+═══════════════════════════════════════════════════════════════
+  VALIDATION COMPLETE
+═══════════════════════════════════════════════════════════════

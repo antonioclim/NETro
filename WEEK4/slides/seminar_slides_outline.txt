@@ -1,0 +1,910 @@
+================================================================================
+SEMINAR 4 - PROTOCOALE TEXT ȘI BINARE CUSTOM PESTE TCP/UDP
+================================================================================
+Rețele de Calculatoare | An 3, Sem. 2 | Informatică Economică
+Săptămâna 4: Implementarea de protocoale custom peste TCP și UDP
+================================================================================
+
+DURATĂ ESTIMATĂ: 100 minute (2h activitate)
+FORMAT: Workshop practic cu cod live + exerciții individuale/perechi
+
+================================================================================
+SLIDE 1: TITLU ȘI CONTEXT
+================================================================================
+Titlu: "Protocoale Custom: De la Specificație la Implementare"
+Subtitlu: Seminar 4 - Proiectarea și implementarea protocoalelor aplicație
+
+Elemente vizuale:
+- Diagramă: Flux date [Aplicație] → [Protocol Custom] → [TCP/UDP] → [IP] → [Rețea]
+- Iconuri: Cod Python, pachete, conexiune
+
+Context rapid (1 min):
+"Săptămâna trecută am lucrat cu sockets TCP/UDP de bază. Astăzi definim
+propriile noastre protocoale - exact cum fac aplicațiile reale."
+
+================================================================================
+SLIDE 2: OBIECTIVELE SEMINARULUI
+================================================================================
+Titlu: "Ce vom realiza astăzi"
+
+La finalul seminarului veți putea:
+1. Specifica un protocol text cu comenzi și răspunsuri clare
+2. Specifica un protocol binar cu header fix și payload variabil
+3. Implementa server și client pentru ambele tipuri
+4. Analiza traficul custom cu Wireshark/tshark
+5. Compara overhead-ul și eficiența celor două abordări
+
+Timing vizual:
+[0-15 min] Recapitulare + Design protocoale
+[15-40 min] Protocol TEXT - implementare
+[40-70 min] Protocol BINAR - implementare  
+[70-90 min] Protocol UDP sensor
+[90-100 min] Exerciții și concluzii
+
+================================================================================
+SLIDE 3: RECAPITULARE - SOCKETS ȘI COMUNICARE
+================================================================================
+Titlu: "Fundamentele din S3"
+
+TCP vs UDP - Rezumat vizual:
+┌─────────────────────────────────────────────────────────────┐
+│ TCP                          │ UDP                          │
+├──────────────────────────────┼──────────────────────────────┤
+│ Connection-oriented          │ Connectionless               │
+│ Reliable (ACK, retransmit)   │ Best-effort                  │
+│ Ordered delivery             │ No ordering guarantee        │
+│ Stream-based                 │ Message-based (datagrams)    │
+│ socket() → connect() → ...   │ socket() → sendto()/recvfrom │
+└─────────────────────────────────────────────────────────────┘
+
+Întrebare rapidă:
+"Care mecanism garantează că datele ajung în ordine la destinație?"
+
+================================================================================
+SLIDE 4: DE CE PROTOCOALE CUSTOM?
+================================================================================
+Titlu: "Motivația din spatele protocoalelor proprii"
+
+Protocoale standard (HTTP, FTP, SMTP):
+- Generale, versatile
+- Overhead semnificativ pentru cazuri simple
+- Nu întotdeauna potrivite pentru IoT, gaming, streaming
+
+Protocoale custom:
+- Optimizate pentru cazul de utilizare specific
+- Control total asupra formatului
+- Overhead minim când e necesar
+- Exemple: Protocolul Redis (RESP), Memcached, protocoale gaming
+
+Diagramă comparativă overhead:
+HTTP Request: ~500 bytes pentru "GET /data"
+Protocol custom binar: ~14 bytes pentru aceeași cerere
+
+================================================================================
+SLIDE 5: TIPURI DE PROTOCOALE - TAXONOMIE
+================================================================================
+Titlu: "Text vs Binar: Două filozofii diferite"
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PROTOCOALE TEXT                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • Human-readable                                                            │
+│ • Debugging facil (telnet, netcat)                                         │
+│ • Overhead mai mare (caractere ASCII)                                       │
+│ • Parsing cu string operations                                              │
+│ • Exemple: HTTP/1.x, SMTP, FTP control, Redis RESP                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PROTOCOALE BINARE                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ • Compact, eficient                                                         │
+│ • Overhead minim                                                            │
+│ • Parsing cu struct.pack/unpack                                             │
+│ • Necesită documentație clară                                               │
+│ • Exemple: Protocol Buffers, MessagePack, gaming protocols                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+SLIDE 6: PROTOCOLUL TEXT - SPECIFICAȚIE
+================================================================================
+Titlu: "Design Protocol TEXT pentru S4"
+
+Format mesaj:
+┌──────────────────────────────────────────────────────────────┐
+│  "<LUNGIME> <PAYLOAD>\n"                                     │
+│                                                              │
+│  Unde:                                                       │
+│  - LUNGIME: număr zecimal (lungimea payload-ului în bytes)   │
+│  - Spațiu separator                                          │
+│  - PAYLOAD: date UTF-8                                       │
+│  - \n: terminator mesaj                                      │
+└──────────────────────────────────────────────────────────────┘
+
+Exemple:
+Client trimite: "5 Hello\n"    → Server primește "Hello"
+Server răspunde: "12 Hello back!\n" → Client primește "Hello back!"
+
+Caracteristici:
+- Self-describing (lungimea e inclusă)
+- Testabil cu netcat/telnet
+- Newline ca delimitator
+
+================================================================================
+SLIDE 7: PROTOCOL TEXT - FRAMING PROBLEM
+================================================================================
+Titlu: "Problema delimitării mesajelor (Framing)"
+
+De ce e important?
+TCP = STREAM de bytes, NU mesaje discrete!
+
+Scenarii problematice:
+┌─────────────────────────────────────────────────────────────┐
+│ Client trimite: "5 Hello\n" + "6 World!\n"                  │
+│                                                              │
+│ Server poate primi:                                          │
+│ • Ideal: recv() = "5 Hello\n" apoi recv() = "6 World!\n"    │
+│ • Real posibil: recv() = "5 Hello\n6 Wor"                   │
+│                 recv() = "ld!\n"                             │
+└─────────────────────────────────────────────────────────────┘
+
+Soluția: recv_until() - citim până la delimitator
+```python
+def recv_until(sock, delimiter=b'\n'):
+    buffer = b''
+    while delimiter not in buffer:
+        chunk = sock.recv(1)
+        if not chunk:
+            raise ConnectionError("Conexiune închisă")
+        buffer += chunk
+    return buffer
+```
+
+================================================================================
+SLIDE 8: PROTOCOL TEXT - IMPLEMENTARE SERVER (1/2)
+================================================================================
+Titlu: "Server TEXT - Structura de bază"
+
+```python
+#!/usr/bin/env python3
+"""Server pentru protocolul TEXT custom - port 3333"""
+import socket
+import threading
+
+def parse_message(data: bytes) -> str:
+    """Parsare mesaj format: '<LEN> <PAYLOAD>'"""
+    text = data.decode('utf-8').strip()
+    parts = text.split(' ', 1)  # Split la primul spațiu
+    if len(parts) != 2:
+        raise ValueError("Format invalid")
+    length = int(parts[0])
+    payload = parts[1]
+    if len(payload) != length:
+        raise ValueError(f"Lungime declarată {length} != reală {len(payload)}")
+    return payload
+```
+
+Puncte cheie:
+- split(' ', 1) - split doar la primul spațiu
+- Validare lungime declarată vs reală
+- Encoding UTF-8 consistent
+
+================================================================================
+SLIDE 9: PROTOCOL TEXT - IMPLEMENTARE SERVER (2/2)
+================================================================================
+Titlu: "Server TEXT - Handler și loop principal"
+
+```python
+def handle_client(conn, addr):
+    """Handler pentru un client conectat"""
+    print(f"[+] Client conectat: {addr}")
+    try:
+        while True:
+            data = recv_until(conn, b'\n')
+            if not data:
+                break
+            payload = parse_message(data)
+            print(f"[{addr}] Primit: {payload}")
+            
+            # Ecou înapoi
+            response = f"{len(payload)} {payload}\n"
+            conn.sendall(response.encode('utf-8'))
+    except Exception as e:
+        print(f"[!] Eroare: {e}")
+    finally:
+        conn.close()
+        print(f"[-] Client deconectat: {addr}")
+
+def start_server(host='0.0.0.0', port=3333):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((host, port))
+        s.listen(5)
+        print(f"[*] Server TEXT pe {host}:{port}")
+        while True:
+            conn, addr = s.accept()
+            t = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
+            t.start()
+```
+
+================================================================================
+SLIDE 10: PROTOCOL TEXT - CLIENT
+================================================================================
+Titlu: "Client TEXT - Implementare"
+
+```python
+#!/usr/bin/env python3
+"""Client pentru protocolul TEXT custom"""
+import socket
+
+def send_message(sock, message: str) -> str:
+    """Trimite mesaj și primește răspuns"""
+    # Formatare și trimitere
+    packet = f"{len(message)} {message}\n"
+    sock.sendall(packet.encode('utf-8'))
+    
+    # Primire răspuns
+    response = recv_until(sock, b'\n')
+    return parse_message(response)
+
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(('localhost', 3333))
+        
+        messages = ["Hello", "Rețele de calculatoare", "Test 123"]
+        for msg in messages:
+            response = send_message(s, msg)
+            print(f"Trimis: {msg!r} → Primit: {response!r}")
+
+if __name__ == '__main__':
+    main()
+```
+
+Demo live: rulăm server + client + urmărim cu tshark
+
+================================================================================
+SLIDE 11: PROTOCOL TEXT - DEMO TSHARK
+================================================================================
+Titlu: "Analiza traficului TEXT cu tshark"
+
+Terminal 1 (captura):
+```bash
+sudo tshark -i lo -f "tcp port 3333" -Y "tcp.payload" -T fields \
+    -e frame.number -e ip.src -e ip.dst -e tcp.payload
+```
+
+Terminal 2 (server):
+```bash
+python3 text_proto_server.py
+```
+
+Terminal 3 (client):
+```bash
+python3 text_proto_client.py
+```
+
+Output tshark (interpretat):
+```
+Frame  Src           Dst           Payload (hex → ASCII)
+1      127.0.0.1     127.0.0.1     35 20 48 65 6c 6c 6f 0a → "5 Hello\n"
+2      127.0.0.1     127.0.0.1     35 20 48 65 6c 6c 6f 0a → "5 Hello\n"
+```
+
+Observație: Payload-ul e vizibil direct în ASCII!
+
+================================================================================
+SLIDE 12: PROTOCOLUL BINAR - SPECIFICAȚIE
+================================================================================
+Titlu: "Design Protocol BINAR pentru S4"
+
+Header fix (14 bytes):
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Offset │ Bytes │ Camp           │ Descriere                               │
+├────────┼───────┼────────────────┼─────────────────────────────────────────┤
+│ 0      │ 2     │ MAGIC          │ "NP" (0x4E50) - Network Protocol        │
+│ 2      │ 1     │ VERSION        │ Versiune protocol (0x01)                │
+│ 3      │ 1     │ TYPE           │ Tip mesaj (0=req, 1=resp, 2=error)      │
+│ 4      │ 4     │ PAYLOAD_LEN    │ Lungime payload (big-endian, uint32)    │
+│ 8      │ 2     │ SEQUENCE       │ Număr secvență (big-endian, uint16)     │
+│ 10     │ 4     │ CRC32          │ Checksum payload (big-endian, uint32)   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+Payload (variabil):
+- Bytes arbitrari, lungime specificată în header
+- Poate fi text, date serializate, imagine, etc.
+
+================================================================================
+SLIDE 13: PROTOCOL BINAR - STRUCT MODULE
+================================================================================
+Titlu: "Python struct - Serializare binară"
+
+Formatul struct.pack/unpack:
+```python
+import struct
+
+# Format string pentru header-ul nostru:
+# > = big-endian (network byte order)
+# 2s = 2 bytes string (MAGIC)
+# B = unsigned char (VERSION)
+# B = unsigned char (TYPE)
+# I = unsigned int 4 bytes (PAYLOAD_LEN)
+# H = unsigned short 2 bytes (SEQUENCE)
+# I = unsigned int 4 bytes (CRC32)
+
+HEADER_FORMAT = '>2sBBIHI'
+HEADER_SIZE = struct.calcsize(HEADER_FORMAT)  # = 14
+
+# Pack (creare header)
+header = struct.pack(HEADER_FORMAT, b'NP', 1, 0, 100, 1, 0x12345678)
+
+# Unpack (citire header)
+magic, ver, typ, plen, seq, crc = struct.unpack(HEADER_FORMAT, header)
+```
+
+Tabel formate comune:
+| Format | C Type         | Python Type | Size |
+|--------|----------------|-------------|------|
+| B      | unsigned char  | int         | 1    |
+| H      | unsigned short | int         | 2    |
+| I      | unsigned int   | int         | 4    |
+| s      | char[]         | bytes       | var  |
+
+================================================================================
+SLIDE 14: PROTOCOL BINAR - FRAMING EXACT
+================================================================================
+Titlu: "Citire exactă de bytes - recv_exact()"
+
+De ce recv_exact()?
+- recv(n) poate returna mai puțin de n bytes!
+- Header-ul nostru e FIX 14 bytes - trebuie să citim exact 14
+
+```python
+def recv_exact(sock, n):
+    """Primește exact n bytes sau ridică excepție"""
+    buffer = b''
+    while len(buffer) < n:
+        chunk = sock.recv(n - len(buffer))
+        if not chunk:
+            raise ConnectionError("Conexiune închisă prematur")
+        buffer += chunk
+    return buffer
+
+# Utilizare pentru protocol binar:
+header_bytes = recv_exact(conn, HEADER_SIZE)  # exact 14 bytes
+magic, ver, typ, plen, seq, crc = struct.unpack(HEADER_FORMAT, header_bytes)
+payload = recv_exact(conn, plen)  # exact plen bytes
+```
+
+Comparație:
+| Abordare      | recv(14)                 | recv_exact(14)           |
+|---------------|--------------------------|--------------------------|
+| Returnează    | 1-14 bytes              | Exact 14 bytes          |
+| Reliable?     | NU                       | DA                       |
+| Use case      | Buffering simplu         | Protocoale cu frame fix  |
+
+================================================================================
+SLIDE 15: PROTOCOL BINAR - CRC32 VALIDARE
+================================================================================
+Titlu: "Integritate date cu CRC32"
+
+Ce este CRC32?
+- Cyclic Redundancy Check, 32 biți
+- Detectează erori de transmisie
+- NU este criptografic (nu pentru securitate)
+
+```python
+import zlib
+
+def compute_crc32(data: bytes) -> int:
+    """Calculează CRC32 pentru payload"""
+    return zlib.crc32(data) & 0xFFFFFFFF  # Asigură 32 biți unsigned
+
+# Exemplu
+payload = b"Hello Network"
+crc = compute_crc32(payload)
+print(f"CRC32: 0x{crc:08X}")  # CRC32: 0xA1B2C3D4
+
+# La receptor - validare
+received_crc = ...  # din header
+computed_crc = compute_crc32(received_payload)
+if received_crc != computed_crc:
+    raise ValueError("CRC mismatch - date corupte!")
+```
+
+Diagrama validare:
+[Sender] → compute CRC → include în header → trimite
+[Receiver] → citește header → citește payload → compute CRC → compară
+
+================================================================================
+SLIDE 16: PROTOCOL BINAR - SERVER IMPLEMENTARE
+================================================================================
+Titlu: "Server BINAR - Cod complet"
+
+```python
+def handle_binary_client(conn, addr):
+    """Handler pentru protocol binar"""
+    print(f"[+] Client binar: {addr}")
+    try:
+        while True:
+            # 1. Citește header fix
+            header = recv_exact(conn, HEADER_SIZE)
+            magic, ver, typ, plen, seq, crc = struct.unpack(HEADER_FORMAT, header)
+            
+            # 2. Validări header
+            if magic != b'NP':
+                raise ValueError(f"Magic invalid: {magic}")
+            if ver != 1:
+                raise ValueError(f"Versiune necunoscută: {ver}")
+            
+            # 3. Citește payload
+            payload = recv_exact(conn, plen)
+            
+            # 4. Validare CRC
+            if compute_crc32(payload) != crc:
+                raise ValueError("CRC mismatch!")
+            
+            print(f"[{addr}] Seq={seq}, Payload={payload[:50]}...")
+            
+            # 5. Răspuns (ecou)
+            send_binary_message(conn, payload, seq, msg_type=1)
+            
+    except Exception as e:
+        print(f"[!] Eroare: {e}")
+    finally:
+        conn.close()
+```
+
+================================================================================
+SLIDE 17: PROTOCOL BINAR - HELPER TRIMITERE
+================================================================================
+Titlu: "Funcție helper pentru trimitere mesaj binar"
+
+```python
+def send_binary_message(sock, payload: bytes, seq: int, msg_type: int = 0):
+    """
+    Construiește și trimite un mesaj în format binar.
+    
+    Args:
+        sock: Socket conectat
+        payload: Date de trimis
+        seq: Număr secvență
+        msg_type: 0=request, 1=response, 2=error
+    """
+    crc = compute_crc32(payload)
+    
+    header = struct.pack(
+        HEADER_FORMAT,
+        b'NP',           # MAGIC
+        1,               # VERSION
+        msg_type,        # TYPE
+        len(payload),    # PAYLOAD_LEN
+        seq,             # SEQUENCE
+        crc              # CRC32
+    )
+    
+    # Trimite header + payload atomic
+    sock.sendall(header + payload)
+```
+
+Observații:
+- sendall() garantează trimiterea completă
+- header + payload concatenate înainte de trimitere
+- Secvența permite potrivirea request-response
+
+================================================================================
+SLIDE 18: PROTOCOL BINAR - DEMO WIRESHARK
+================================================================================
+Titlu: "Analiza traficului BINAR cu Wireshark"
+
+Pași demo:
+1. Start captura pe loopback, filtru: tcp.port == 4444
+2. Rulează server binar (port 4444)
+3. Rulează client binar
+4. Oprește captura și analizează
+
+Ce vedem în Wireshark (hex dump):
+```
+0000   4e 50 01 00 00 00 00 0d 00 01 a1 b2 c3 d4 48 65
+       ├─┬─┤├┤├┤├────────┤├───┤├────────┤├─────────────
+       MAGIC V T  PAYLOAD   SEQ   CRC32    Payload...
+             │ │  LEN=13
+             │ └─ TYPE=request
+             └─── VERSION=1
+```
+
+Exercițiu:
+- Identificați câmpurile în capture-ul propriu
+- Calculați manual CRC32 și verificați
+
+================================================================================
+SLIDE 19: PROTOCOLUL UDP SENSOR - SPECIFICAȚIE
+================================================================================
+Titlu: "Protocol UDP pentru date senzori IoT"
+
+Cazul de utilizare:
+- Senzori IoT trimit periodic citiri
+- Pierderea ocazională e acceptabilă
+- Latență mică, overhead minim
+- Fire-and-forget (fără confirmare)
+
+Format datagramă (23 bytes fix):
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Offset │ Bytes │ Camp           │ Descriere                               │
+├────────┼───────┼────────────────┼─────────────────────────────────────────┤
+│ 0      │ 1     │ VERSION        │ Versiune protocol (0x01)                │
+│ 1      │ 4     │ SENSOR_ID      │ Identificator senzor (uint32)           │
+│ 5      │ 4     │ TEMPERATURE    │ Temperatură float (IEEE 754)            │
+│ 9      │ 10    │ LOCATION       │ Locație ASCII, padded cu spații         │
+│ 19     │ 4     │ CRC32          │ Checksum (uint32)                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+Total: 1 + 4 + 4 + 10 + 4 = 23 bytes
+
+================================================================================
+SLIDE 20: UDP SENSOR - DIFERENȚE FAȚĂ DE TCP
+================================================================================
+Titlu: "UDP vs TCP pentru senzori"
+
+Tabel comparativ aplicat:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Aspect              │ TCP (Text/Binar)       │ UDP (Sensor)                 │
+├─────────────────────┼────────────────────────┼──────────────────────────────┤
+│ Conexiune           │ connect() necesar      │ Nu, sendto() direct          │
+│ Handshake           │ 3-way (SYN-SYN/ACK-ACK)│ Niciunul                     │
+│ Ordine              │ Garantată              │ Nu                           │
+│ Pierderi            │ Retransmisie auto      │ Acceptate/ignorate           │
+│ Overhead            │ ~20 bytes TCP header   │ ~8 bytes UDP header          │
+│ Pattern             │ Stream continuu        │ Datagrame discrete           │
+│ Best for            │ Comenzi, fișiere       │ Telemetrie, video, gaming    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Întrebare:
+"De ce am folosi UDP pentru senzori dacă datele se pot pierde?"
+
+Răspuns: Pentru senzori cu citiri frecvente, o citire pierdută e mai puțin
+importantă decât latența adăugată de TCP. Următoarea citire vine oricum în
+câteva secunde.
+
+================================================================================
+SLIDE 21: UDP SENSOR - IMPLEMENTARE CLIENT (SENZOR)
+================================================================================
+Titlu: "Senzor IoT - Client UDP"
+
+```python
+#!/usr/bin/env python3
+"""Simulator senzor IoT care trimite citiri UDP"""
+import socket
+import struct
+import time
+import random
+import zlib
+
+SENSOR_FORMAT = '>BIfI'  # fără location, adăugat separat
+COLLECTOR_HOST = 'localhost'
+COLLECTOR_PORT = 5555
+
+def create_sensor_datagram(sensor_id, temperature, location):
+    """Creează datagramă senzor de 23 bytes"""
+    # Pad location la exact 10 bytes
+    loc_padded = location.ljust(10)[:10].encode('ascii')
+    
+    # Pack fără CRC (19 bytes)
+    partial = struct.pack('>BIf', 1, sensor_id, temperature)
+    data_for_crc = partial + loc_padded
+    
+    # Calculează CRC
+    crc = zlib.crc32(data_for_crc) & 0xFFFFFFFF
+    
+    # Datagramă completă
+    return data_for_crc + struct.pack('>I', crc)
+
+def run_sensor(sensor_id, location, interval=2.0):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while True:
+        temp = 20.0 + random.uniform(-5, 10)  # 15-30°C
+        datagram = create_sensor_datagram(sensor_id, temp, location)
+        sock.sendto(datagram, (COLLECTOR_HOST, COLLECTOR_PORT))
+        print(f"[Sensor {sensor_id}] Sent: {temp:.1f}°C")
+        time.sleep(interval)
+```
+
+================================================================================
+SLIDE 22: UDP SENSOR - IMPLEMENTARE SERVER (COLECTOR)
+================================================================================
+Titlu: "Colector date senzori - Server UDP"
+
+```python
+#!/usr/bin/env python3
+"""Colector care primește și agregă date de la senzori"""
+import socket
+import struct
+import zlib
+
+def parse_sensor_datagram(data):
+    """Parsează datagramă senzor de 23 bytes"""
+    if len(data) != 23:
+        raise ValueError(f"Lungime invalidă: {len(data)} != 23")
+    
+    # Unpack
+    version = data[0]
+    sensor_id = struct.unpack('>I', data[1:5])[0]
+    temperature = struct.unpack('>f', data[5:9])[0]
+    location = data[9:19].decode('ascii').strip()
+    received_crc = struct.unpack('>I', data[19:23])[0]
+    
+    # Validare CRC
+    computed_crc = zlib.crc32(data[:19]) & 0xFFFFFFFF
+    if received_crc != computed_crc:
+        raise ValueError("CRC mismatch!")
+    
+    return sensor_id, temperature, location
+
+def run_collector(port=5555):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('0.0.0.0', port))
+    print(f"[*] Colector UDP pe port {port}")
+    
+    while True:
+        data, addr = sock.recvfrom(64)
+        try:
+            sid, temp, loc = parse_sensor_datagram(data)
+            print(f"[{addr}] Sensor {sid} @ {loc}: {temp:.1f}°C")
+        except ValueError as e:
+            print(f"[!] Datagramă invalidă de la {addr}: {e}")
+```
+
+================================================================================
+SLIDE 23: MININET - TESTARE PROTOCOALE
+================================================================================
+Titlu: "Testare în Mininet - Topologie simplă"
+
+Topologie pentru demo:
+```
+       h1 (client)
+        │
+        │
+       s1 (switch)
+        │
+        │
+       h2 (server)
+```
+
+Script Mininet minim:
+```python
+from mininet.net import Mininet
+from mininet.topo import SingleSwitchTopo
+
+net = Mininet(topo=SingleSwitchTopo(2))
+net.start()
+
+h1, h2 = net.hosts
+
+# Pornește server pe h2
+h2.cmd('python3 /path/to/binary_proto_server.py &')
+
+# Testează de pe h1
+result = h1.cmd('python3 /path/to/binary_proto_client.py')
+print(result)
+
+net.stop()
+```
+
+Avantaje testare în Mininet:
+- Izolare completă de rețeaua reală
+- Control asupra topologiei
+- Simulare delay/loss cu tc netem
+
+================================================================================
+SLIDE 24: COMPARAȚIE PROTOCOALE - TABEL FINAL
+================================================================================
+Titlu: "Rezumat: Trei protocoale, trei cazuri de utilizare"
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              │ TEXT (TCP)        │ BINAR (TCP)       │ SENSOR (UDP)        │
+├──────────────┼───────────────────┼───────────────────┼─────────────────────┤
+│ Port         │ 3333              │ 4444              │ 5555                │
+│ Transport    │ TCP               │ TCP               │ UDP                 │
+│ Format       │ "<LEN> <DATA>\n"  │ Header 14B + data │ Fixed 23B           │
+│ Framing      │ recv_until(\n)    │ recv_exact(N)     │ recvfrom()          │
+│ Overhead     │ ~10 chars/msg     │ 14 bytes/msg      │ 23 bytes/reading    │
+│ Validare     │ Lungime în mesaj  │ CRC32             │ CRC32               │
+│ Human-read?  │ DA                │ NU                │ NU                  │
+│ Debug tool   │ netcat, telnet    │ Wireshark hex     │ Wireshark hex       │
+│ Best for     │ CLI, comenzi      │ Performance       │ IoT, telemetrie     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+SLIDE 25: EXERCIȚII PRACTICE - NIVEL 1
+================================================================================
+Titlu: "Exerciții de consolidare - Înțelegere"
+
+Exercițiul 1: Protocol TEXT extins
+Modificați protocolul TEXT să suporte comenzi multiple:
+- ECHO <text> - returnează textul
+- UPPER <text> - returnează uppercase
+- LOWER <text> - returnează lowercase
+- REVERSE <text> - returnează inversat
+Format: "<CMD> <LEN> <PAYLOAD>\n"
+
+Exercițiul 2: Analiza în Wireshark
+Capturați 10 mesaje TEXT și 10 BINAR. Calculați:
+a) Overhead total (bytes protocol / bytes payload) pentru fiecare
+b) Care protocol e mai eficient pentru payload de 5 bytes? 500 bytes?
+
+================================================================================
+SLIDE 26: EXERCIȚII PRACTICE - NIVEL 2
+================================================================================
+Titlu: "Exerciții de consolidare - Aplicare"
+
+Exercițiul 3: Protocol BINAR cu tipuri
+Extindeți header-ul binar cu un câmp TYPE pentru payload:
+- TYPE=0: text UTF-8
+- TYPE=1: JSON serializat
+- TYPE=2: bytes raw
+
+Serverul trebuie să proceseze diferit fiecare tip.
+
+Exercițiul 4: Agregator UDP
+Creați un agregator care primește date de la multipli senzori și:
+a) Calculează media temperaturii per locație
+b) Detectează senzori care nu au trimis date în ultimele 30 sec
+c) Generează un raport JSON periodic
+
+================================================================================
+SLIDE 27: EXERCIȚIU CHALLENGE
+================================================================================
+Titlu: "Exercițiu avansat - Evaluare și creație"
+
+Challenge: Protocol hibrid TEXT/BINAR
+
+Proiectați și implementați un protocol care:
+1. Folosește handshake TEXT pentru negociere capabilități
+2. Trece la mod BINAR pentru transfer date
+3. Suportă compresie opțională (zlib)
+4. Include timestamp în fiecare mesaj
+
+Livrabile:
+- Specificație protocol (document)
+- Implementare server + client
+- Teste cu tshark care demonstrează ambele moduri
+- Analiza overhead cu/fără compresie
+
+================================================================================
+SLIDE 28: DEBUGGING PROTOCOALE CUSTOM
+================================================================================
+Titlu: "Greșeli frecvente și cum le depistezi"
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Simptom                       │ Cauză probabilă          │ Diagnostic       │
+├───────────────────────────────┼──────────────────────────┼──────────────────┤
+│ recv() blochează indefinit    │ Nu ai trimis destul      │ Check lungime    │
+│ Date trunchiare               │ recv() < bytes așteptați │ Folosește recv_  │
+│                               │                          │ exact()          │
+│ CRC mismatch constant         │ Endianness greșit        │ Verifică > vs <  │
+│ Magic invalid                 │ Offset greșit în unpack  │ Check HEADER_    │
+│                               │                          │ SIZE             │
+│ Conexiune refuzată            │ Server nu ascultă        │ netstat -tlnp    │
+│ Timeout                       │ Firewall blochează       │ Check iptables   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Comenzi utile debug:
+```bash
+# Verifică dacă serverul ascultă
+netstat -tlnp | grep 3333
+
+# Test conexiune
+nc -v localhost 3333
+
+# Capturează tot ce trece pe port
+sudo tcpdump -i lo port 3333 -XX
+```
+
+================================================================================
+SLIDE 29: CONCLUZII ȘI RECAPITULARE
+================================================================================
+Titlu: "Ce am învățat astăzi"
+
+Concepte fundamentale:
+✓ Diferența între protocoale text și binare
+✓ Problema framing-ului în TCP streams
+✓ Tehnici recv_until() și recv_exact()
+✓ Serializare binară cu struct.pack/unpack
+✓ Validare integritate cu CRC32
+✓ Caracteristicile UDP pentru aplicații fără conexiune
+
+Competențe dobândite:
+✓ Specificare protocol custom (format mesaj, câmpuri, tipuri)
+✓ Implementare server și client pentru protocoale custom
+✓ Analiza traficului custom cu Wireshark/tshark
+✓ Debugging probleme de comunicare
+
+================================================================================
+SLIDE 30: LEGĂTURA CU PROIECTUL DE ECHIPĂ
+================================================================================
+Titlu: "Contribuția la proiectul semestrial"
+
+Artefact S4 pentru proiect:
+Implementați un protocol custom pentru aplicația voastră de echipă.
+
+Cerințe minime:
+1. Specificație documentată (format header, tipuri mesaje)
+2. Implementare server + client funcționale
+3. Minim 3 tipuri de mesaje/comenzi diferite
+4. Validare (CRC sau alt mecanism)
+5. Captură tshark demonstrativă
+
+Bonus:
+- Protocol hibrid (negociere TEXT → transfer BINAR)
+- Compresie payload
+- Suport multiple versiuni protocol
+
+Deadline integrare: conform planificării proiectului
+
+================================================================================
+SLIDE 31: PENTRU DATA VIITOARE
+================================================================================
+Titlu: "Săptămâna 5: Adresare și rutare"
+
+Pregătire:
+- Recapitulare IPv4 (clasele A, B, C)
+- Noțiuni de subnetting (CIDR notation)
+- Instalare/actualizare: Cisco Packet Tracer sau GNS3
+
+Vom învăța:
+- Subnetting și VLSM
+- Configurare rutare statică
+- Protocoale de rutare dinamică (introducere)
+- Simulare rețele complexe
+
+Temă opțională:
+Extindeți unul din protocoalele de astăzi cu suport pentru
+discovery automat (broadcast/multicast).
+
+================================================================================
+SLIDE 32: RESURSE ȘI BIBLIOGRAFIE
+================================================================================
+Titlu: "Materiale suplimentare"
+
+Din starterkit:
+- /python/apps/ - implementări complete
+- /python/exercises/ - exerciții ghidate
+- /docs/tcpdump_cheatsheet.md
+- /docs/tshark_cheatsheet.md
+
+Online:
+- RFC 793 (TCP) - secțiunea despre segmentare
+- Python struct module docs
+- Wireshark User Guide - Custom Protocol Dissectors
+
+Bibliografie:
+- Kurose & Ross, "Computer Networking", Cap. 2-3
+- Rhodes & Goerzen, "Foundations of Python Network Programming", Cap. 5-6
+- Stevens, "TCP/IP Illustrated", Vol. 1, Cap. 17-18
+
+================================================================================
+NOTĂ PENTRU INSTRUCTOR
+================================================================================
+
+Timing recomandat:
+- Slides 1-5: 10 min (intro + recapitulare)
+- Slides 6-11: 20 min (protocol TEXT + demo)
+- Slides 12-18: 25 min (protocol BINAR + demo)
+- Slides 19-22: 15 min (protocol UDP sensor)
+- Slides 23-24: 10 min (Mininet + comparație)
+- Slides 25-28: 15 min (exerciții + debugging)
+- Slides 29-32: 5 min (concluzii + next)
+
+Materiale necesare:
+- Proiector + terminal vizibil
+- Starterkit pregătit pe VM/container
+- Wireshark instalat pentru demo-uri
+- Acces sudo pentru tshark
+
+Puncte de verificare:
+- După slide 11: studenții înțeleg framing TEXT?
+- După slide 17: studenții înțeleg struct.pack?
+- După slide 22: studenții înțeleg diferența UDP?
+
+================================================================================
+                    Revolvix&Hypotheticalandrei
+================================================================================

@@ -1,0 +1,132 @@
+═══════════════════════════════════════════════════════════════
+  STARTERKIT S4 - DEMO AUTOMAT
+  Data: 2026-01-03 13:02:40
+  Porturi: TEXT=5400, BINARY=5401, UDP=5402
+═══════════════════════════════════════════════════════════════
+
+[0;33m[CAPTURE] Skip (tcpdump indisponibil sau --quick)[0m
+
+[0;32m[DEMO 1] Protocol TEXT over TCP (port 5400)[0m
+──────────────────────────────────────────
+[TEXT] Server listening on 0.0.0.0:5400
+[TEXT] Protocol: length-prefixed text (<LEN> <PAYLOAD>)
+[TEXT] Commands: PING, SET, GET, DEL, COUNT, KEYS, QUIT
+[TEXT] Press Ctrl+C to stop
+Server pornit pe port 5400 (PID: 179)
+
+[0;36mExecutare comenzi TEXT:[0m
+> PING
+[TEXT] + connected 127.0.0.1:39789
+[TEXT] < 127.0.0.1:39789: PING
+[TEXT] > 127.0.0.1:39789: OK pong
+< OK pong
+> SET name Alice
+[TEXT] < 127.0.0.1:39789: SET name Alice
+[TEXT] > 127.0.0.1:39789: OK stored name
+< OK stored name
+> SET city Bucharest
+[TEXT] < 127.0.0.1:39789: SET city Bucharest
+[TEXT] > 127.0.0.1:39789: OK stored city
+< OK stored city
+> SET year 2025
+[TEXT] < 127.0.0.1:39789: SET year 2025
+[TEXT] > 127.0.0.1:39789: OK stored year
+< OK stored year
+> GET name
+[TEXT] < 127.0.0.1:39789: GET name
+[TEXT] > 127.0.0.1:39789: OK name Alice
+< OK name Alice
+> COUNT
+[TEXT] < 127.0.0.1:39789: COUNT
+[TEXT] > 127.0.0.1:39789: OK 3 keys
+< OK 3 keys
+> KEYS
+[TEXT] < 127.0.0.1:39789: KEYS
+[TEXT] > 127.0.0.1:39789: OK city name year
+< OK city name year
+> DEL year
+[TEXT] < 127.0.0.1:39789: DEL year
+[TEXT] > 127.0.0.1:39789: OK deleted< OK deleted
+
+> COUNT
+[TEXT] < 127.0.0.1:39789: COUNT
+[TEXT] > 127.0.0.1:39789: OK 2 keys
+< OK 2 keys
+> QUIT
+[TEXT] < 127.0.0.1:39789: QUIT
+[TEXT] > 127.0.0.1:39789: OK bye
+[TEXT] - disconnected 127.0.0.1:39789
+< OK bye
+
+[0;32m✓ Demo TEXT complet![0m
+
+[0;32m[DEMO 2] Protocol BINAR over TCP (port 5401)[0m
+──────────────────────────────────────────
+[BIN] Server listening on 0.0.0.0:5401
+[BIN] Protocol: binary header (14B) + CRC32
+[BIN] Press Ctrl+C to stop
+Server pornit pe port 5401 (PID: 195)
+
+[0;36mExecutare comenzi BINARY:[0m
+> echo Hello Binary World
+[BIN] + connected 127.0.0.1:40056
+[BIN] < 127.0.0.1:40056: type=ECHO_REQ seq=1 len=18
+[BIN] > 127.0.0.1:40056: type=ECHO_RESP seq=1
+ECHO: Hello Binary World
+> put name Bob
+[BIN] < 127.0.0.1:40056: type=PUT_REQ seq=2 len=8
+[BIN] > 127.0.0.1:40056: type=PUT_RESP seq=2
+OK
+> put city Paris
+[BIN] < 127.0.0.1:40056: type=PUT_REQ seq=3 len=10
+[BIN] > 127.0.0.1:40056: type=PUT_RESP seq=3
+OK
+> put temp 23.5
+[BIN] < 127.0.0.1:40056: type=PUT_REQ seq=4 len=9
+[BIN] > 127.0.0.1:40056: type=PUT_RESP seq=4
+OK
+> get name
+[BIN] < 127.0.0.1:40056: type=GET_REQ seq=5 len=5
+[BIN] > 127.0.0.1:40056: type=GET_RESP seq=5
+Bob
+> count[BIN] < 127.0.0.1:40056: type=COUNT_REQ seq=6 len=0
+
+[BIN] > 127.0.0.1:40056: type=COUNT_RESP seq=6
+3
+> keys
+[BIN] < 127.0.0.1:40056: type=KEYS_REQ seq=7 len=0
+[BIN] > 127.0.0.1:40056: type=KEYS_RESP seq=7
+['city', 'name', 'temp']
+> quit
+Unknown: quit
+[BIN] - disconnected 127.0.0.1:40056
+
+[0;32m✓ Demo BINAR complet![0m
+
+[0;32m[DEMO 3] Protocol UDP Senzori (port 5402)[0m
+──────────────────────────────────────────
+[UDP] Sensor server listening on 0.0.0.0:5402
+[UDP] Expected datagram size: 23 bytes
+[UDP] Press Ctrl+C to stop and see statistics
+
+Server pornit pe port 5402 (PID: 211)
+
+[0;36mTrimitere citiri senzori:[0m
+[UDP] > localhost:5402 [Sensor 0001] Lab1: +23.5°C[UDP] < 127.0.0.1:25310 [Sensor 0001] Lab1: +23.5°C
+
+[UDP] Packet sent (23 bytes)
+[UDP] > localhost:5402 [Sensor 0002] Office: +19.2°C[UDP] < 127.0.0.1:57302 [Sensor 0002] Office: +19.2°C
+
+[UDP] Packet sent (23 bytes)
+[UDP] < 127.0.0.1:30074 [Sensor 0001] Lab1: +24.1°C[UDP] > localhost:5402 [Sensor 0001] Lab1: +24.1°C
+
+[UDP] Packet sent (23 bytes)
+
+[0;33mTrimitere pachet corupt (testare CRC):[0m
+[UDP] ! Invalid packet from ('127.0.0.1', 37832): CRC mismatch: computed c25ae63f, received 3d5ae63f[UDP] > localhost:5402 [Sensor 0099] Test: +0.0°C (CORRUPTED)
+
+[UDP] Packet sent (23 bytes)
+
+[0;32m✓ Demo UDP complet![0m
+
+[0;32m[VALIDATION] Generare raport validare...[0m

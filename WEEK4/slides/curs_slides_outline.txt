@@ -1,0 +1,680 @@
+================================================================================
+CURS 4 - SLIDE OUTLINE
+Nivelul Fizic & Nivelul Legătură de Date: Protocoale Text și Binare
+================================================================================
+
+Acest outline este conceput pentru import în PowerPoint/Google Slides/reveal.js.
+Fiecare secțiune [SLIDE X] reprezintă un slide distinct.
+Notele sunt pentru presenter (speaker notes).
+
+================================================================================
+SECȚIUNEA 1: INTRODUCERE ȘI MOTIVAȚIE (Slides 1-4)
+================================================================================
+
+[SLIDE 1] - Title Slide
+─────────────────────────────────────────────────────────────────────────────────
+Titlu:    REȚELE DE CALCULATOARE - Săptămâna 4
+Subtitlu: Nivelul Fizic și Nivelul Legătură de Date
+          Protocoale Text și Binare peste TCP/UDP
+Footer:   ASE București • Informatică Economică • 2025
+Visual:   Logo ASE + imagine abstractă cu pachete de date
+
+NOTĂ PRESENTER:
+Recapitulați pe scurt săptămânile 1-3 (socket, TCP vs UDP, Wireshark).
+Anunțați tema zilei: cum organizăm datele în cadre și pachete.
+
+[SLIDE 2] - Ce vom învăța astăzi
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Obiectivele Cursului 4
+
+Conținut:
+• Cum funcționează comunicarea la nivel fizic și legătură de date
+• Diferențele dintre protocoale TEXT și BINARY
+• Tehnici de framing pentru date de lungime variabilă
+• Validare prin CRC și alte mecanisme de integritate
+• Aplicații practice: protocoale custom pentru senzori și comenzi
+
+Visual: Diagramă cu nivelurile OSI, evidențiate L1 și L2
+
+NOTĂ PRESENTER:
+Subliniați că astăzi se face trecerea de la "trimit bytes" la "trimit mesaje structurate".
+
+[SLIDE 3] - De ce contează?
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Relevanța pentru Programatori
+
+Conținut (2 coloane):
+COL 1 - SCENARII REALE:
+• REST API = protocol text (HTTP/JSON)
+• gRPC/Protocol Buffers = protocol binar
+• Senzori IoT = datagrame compacte
+• Baze de date = protocoale binare optimizate
+
+COL 2 - COMPETENȚE CHEIE:
+• Debugging trafic cu Wireshark/tshark
+• Implementare protocoale custom
+• Optimizare bandwidth și latență
+• Detectare și corectare erori
+
+Visual: Icoane pentru fiecare scenariu
+
+NOTĂ PRESENTER:
+Exemplu concret: MySQL wire protocol vs PostgreSQL - ambele binare, dar diferite.
+
+[SLIDE 4] - Recapitulare săptămânile anterioare
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Fundamente (Săpt. 1-3)
+
+Conținut:
+┌─────────────────────────────────────────────────────────────────┐
+│ SĂPT 1-2: Modele OSI/TCP-IP, introducere programare rețea      │
+│ SĂPT 3: Sockets TCP/UDP, server concurent, analiză trafic      │
+│ → ASTĂZI: Structurăm datele în protocoale reale                │
+└─────────────────────────────────────────────────────────────────┘
+
+Test rapid (3 întrebări):
+1. Ce garantează TCP și ce NU garantează UDP?
+2. Ce observăm cu netstat -tlnp pe un server?
+3. Cum filtrăm în Wireshark doar traficul pe portul 5000?
+
+NOTĂ PRESENTER:
+Răspunsuri așteptate: 1) TCP=ordine+livrare, UDP=nimic; 
+2) porturi în LISTEN; 3) tcp.port == 5000
+
+================================================================================
+SECȚIUNEA 2: NIVELUL FIZIC (Slides 5-8)
+================================================================================
+
+[SLIDE 5] - Nivelul Fizic în OSI
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Layer 1 - Stratul Fizic
+
+Conținut:
+Definiție: Transmiterea biților bruti pe mediul fizic
+
+Responsabilități:
+• Codificarea biților în semnale (electrice, optice, radio)
+• Sincronizarea transmisiei
+• Topologia fizică (bus, stea, inel)
+• Specificații hardware (conectori, cabluri, frecvențe)
+
+Visual: Diagramă cu tipuri de medii (cupru, fibră, wireless)
+
+NOTĂ PRESENTER:
+Nu programăm direct la acest nivel, dar trebuie să înțelegem limitările.
+
+[SLIDE 6] - Medii de transmisie
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Tipuri de Medii Fizice
+
+Tabel comparativ:
+┌────────────────┬──────────────┬─────────────┬──────────────┐
+│ MEDIU          │ VITEZĂ MAX   │ DISTANȚĂ    │ INTERFERENȚE │
+├────────────────┼──────────────┼─────────────┼──────────────┤
+│ UTP Cat6       │ 10 Gbps      │ 100m        │ Susceptibil  │
+│ Fibră optică   │ 100+ Gbps    │ km          │ Imun         │
+│ Wi-Fi 6        │ 9.6 Gbps     │ 50m indoor  │ Mediu        │
+│ Coaxial        │ 1 Gbps       │ 500m        │ Scăzut       │
+└────────────────┴──────────────┴─────────────┴──────────────┘
+
+NOTĂ PRESENTER:
+Subliniați trade-off-ul: fibra e rapidă dar scumpă, wireless e convenabil dar imprevizibil.
+
+[SLIDE 7] - Codificarea semnalelor
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: De la Biți la Semnale
+
+Conținut:
+Scheme de codificare comune:
+• NRZ (Non-Return-to-Zero): 0=low, 1=high
+• Manchester: tranziție la mijlocul bitului
+• 4B/5B: 4 biți date → 5 biți transmisie (sync)
+
+Visual: Diagramă de semnale pentru fiecare codificare
+        Secvența: 10110100
+
+NOTĂ PRESENTER:
+Manchester e folosit în Ethernet clasic - tranziția include clock.
+
+[SLIDE 8] - Mini-demo: Nivelul fizic în practică
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Observarea Layer 1
+
+Demo live sau screenshot:
+$ ethtool eth0
+    Speed: 1000Mb/s
+    Duplex: Full
+    Link detected: yes
+
+$ cat /sys/class/net/eth0/statistics/rx_bytes
+$ cat /sys/class/net/eth0/statistics/tx_bytes
+
+Discuție:
+• Ce ne spune "Speed: 1000Mb/s"?
+• Ce înseamnă Full Duplex vs Half Duplex?
+
+NOTĂ PRESENTER:
+Dacă e posibil, arătați și un ethtool -S pentru statistici detaliate.
+
+================================================================================
+SECȚIUNEA 3: NIVELUL LEGĂTURĂ DE DATE (Slides 9-14)
+================================================================================
+
+[SLIDE 9] - Layer 2 - Legătură de Date
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Funcțiile Nivelului Legătură de Date
+
+Conținut:
+Responsabilități principale:
+1. FRAMING - Delimitarea cadrelor
+2. ADRESARE - MAC addresses (48 biți)
+3. CONTROL ERORI - Detectare/corecție (CRC)
+4. CONTROL FLUX - Evitarea supraîncărcării
+5. CONTROL ACCES MEDIU - CSMA/CD, CSMA/CA
+
+Visual: Cadru Ethernet cu câmpurile evidențiate
+
+NOTĂ PRESENTER:
+Ethernet domină LAN-urile; Wi-Fi are propriul protocol 802.11 dar principiile sunt similare.
+
+[SLIDE 10] - Structura cadrului Ethernet
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Anatomia unui Cadru Ethernet
+
+Diagramă:
+┌──────────┬──────────┬──────────┬──────────┬─────────────┬─────────┐
+│ Preamble │ Dest MAC │ Src MAC  │ EtherType│   Payload   │   FCS   │
+│ 8 bytes  │ 6 bytes  │ 6 bytes  │ 2 bytes  │  46-1500 B  │ 4 bytes │
+└──────────┴──────────┴──────────┴──────────┴─────────────┴─────────┘
+
+EtherType valori comune:
+• 0x0800 = IPv4
+• 0x0806 = ARP
+• 0x86DD = IPv6
+
+NOTĂ PRESENTER:
+FCS = Frame Check Sequence (CRC-32). Dacă nu se potrivește, cadrul e abandonat.
+
+[SLIDE 11] - Adrese MAC
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Media Access Control Addresses
+
+Format: 6 octeți (48 biți), notație hex
+Exemplu: AA:BB:CC:DD:EE:FF
+
+Structură:
+┌─────────────────────┬─────────────────────┐
+│ OUI (24 biți)       │ Device ID (24 biți) │
+│ Identifică vendor   │ Unic per dispozitiv │
+└─────────────────────┴─────────────────────┘
+
+Adrese speciale:
+• FF:FF:FF:FF:FF:FF = Broadcast
+• 01:00:5E:xx:xx:xx = Multicast IPv4
+
+Demo:
+$ ip link show | grep ether
+$ arp -a
+
+NOTĂ PRESENTER:
+OUI lookup: https://macvendors.com - util pentru identificarea dispozitivelor.
+
+[SLIDE 12] - ARP - Address Resolution Protocol
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Maparea IP → MAC
+
+Problemă:
+Știm IP-ul destinației, dar Ethernet are nevoie de MAC.
+
+Soluție - ARP:
+1. Host trimite ARP Request (broadcast): "Who has 192.168.1.10?"
+2. Proprietarul răspunde ARP Reply: "192.168.1.10 is at AA:BB:CC:DD:EE:FF"
+3. Maparea se cache-uiește local
+
+Diagrama:
+[Host A] ---(ARP Request, broadcast)---> [Toți]
+[Host B] ---(ARP Reply, unicast)-------> [Host A]
+
+Demo:
+$ arp -a                    # Vizualizare cache
+$ sudo arp -d 192.168.1.10  # Ștergere entry
+
+NOTĂ PRESENTER:
+Vulnerabilitate: ARP spoofing. Mitigation: Dynamic ARP Inspection pe switch.
+
+[SLIDE 13] - Switch-uri și CAM Table
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Cum Învață un Switch
+
+Proces (learning):
+1. Cadru sosește pe Port 1 cu Src MAC = AA:BB:CC:...
+2. Switch notează: "AA:BB:CC:... se află pe Port 1"
+3. Cadrele viitoare pentru AA:BB:CC:... se trimit direct pe Port 1
+
+Tabel CAM (Content Addressable Memory):
+┌─────────────────────┬──────────┬──────────┐
+│ MAC Address         │ Port     │ VLAN     │
+├─────────────────────┼──────────┼──────────┤
+│ AA:BB:CC:DD:EE:FF   │ 1        │ 10       │
+│ 11:22:33:44:55:66   │ 3        │ 10       │
+└─────────────────────┴──────────┴──────────┘
+
+Flood vs Forward:
+• MAC necunoscut → Flood pe toate porturile
+• MAC cunoscut → Forward doar pe portul corect
+
+NOTĂ PRESENTER:
+În Mininet putem vedea CAM table cu: sudo ovs-appctl fdb/show s1
+
+[SLIDE 14] - Control erori - CRC
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Cyclic Redundancy Check
+
+Ce este CRC:
+• Algoritm de detectare erori bazat pe diviziune polinomială
+• Ethernet folosește CRC-32 (4 bytes)
+• Detectează: single-bit, burst errors, multe erori aleatorii
+
+Cum funcționează (simplificat):
+1. Datele sunt tratate ca un număr mare
+2. Se împart la un polinom generator
+3. Restul = CRC, atașat la final
+4. Receptorul recalculează și compară
+
+Python:
+import zlib
+crc = zlib.crc32(data) & 0xFFFFFFFF
+
+NOTĂ PRESENTER:
+CRC nu e criptografic - nu protejează împotriva modificării intenționate.
+
+================================================================================
+SECȚIUNEA 4: PROTOCOALE TEXT (Slides 15-19)
+================================================================================
+
+[SLIDE 15] - Introducere în protocoale de aplicație
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: De la Cadre la Mesaje Aplicație
+
+Problema:
+TCP oferă stream de bytes, nu mesaje delimitate.
+Întrebare: Unde se termină un mesaj și începe altul?
+
+Soluții de FRAMING:
+1. Delimitator (newline, NULL byte)
+2. Prefix lungime (length-prefixed)
+3. Format fix (toate mesajele au aceeași dimensiune)
+
+Visual: Stream TCP cu mesaje suprapuse vs delimitate corect
+
+NOTĂ PRESENTER:
+Aceasta e problema fundamentală pe care o rezolvăm astăzi.
+
+[SLIDE 16] - Protocol TEXT - Design
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Protocoale Text - Avantaje și Structură
+
+Caracteristici:
+• Human-readable (citibil în Wireshark, netcat)
+• Self-describing (câmpurile au nume)
+• Ușor de debugat
+• Overhead mai mare
+
+Exemple reale:
+• HTTP/1.x: GET /path HTTP/1.1\r\n
+• SMTP: MAIL FROM:<addr>\r\n
+• FTP: USER username\r\n
+
+Design propus pentru S4:
+"<LENGTH> <PAYLOAD>\n"
+Exemplu: "13 Hello World!\n"
+
+NOTĂ PRESENTER:
+Overhead: pentru "Hi" trimitem "3 Hi\n" = 5 bytes pentru 2 bytes payload.
+
+[SLIDE 17] - Implementare Protocol TEXT
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Cod Python - Server TEXT
+
+Structura serverului:
+┌────────────────────────────────────────────────────────────┐
+│ 1. Creează socket TCP                                      │
+│ 2. Bind + Listen                                           │
+│ 3. Accept conexiuni                                        │
+│ 4. Pentru fiecare client (thread separat):                 │
+│    a. Citește până la spațiu → lungime                     │
+│    b. Citește exact <lungime> bytes                        │
+│    c. Procesează, trimite răspuns                          │
+│    d. Repetă până la disconnect                            │
+└────────────────────────────────────────────────────────────┘
+
+Funcție cheie: recv_until(sock, delimiter)
+- Citește byte cu byte până găsește delimiter
+- Returnează datele fără delimiter
+
+NOTĂ PRESENTER:
+Vezi fișierul text_proto_server.py din starterkit pentru implementare completă.
+
+[SLIDE 18] - Framing: recv_until și recv_exact
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Funcții de Citire Structurată
+
+recv_until(sock, delimiter):
+"""Citește până la delimiter, returnează fără el."""
+buffer = b''
+while True:
+    byte = sock.recv(1)
+    if not byte:
+        raise ConnectionError("Closed")
+    if byte == delimiter:
+        return buffer
+    buffer += byte
+
+recv_exact(sock, n):
+"""Citește exact n bytes."""
+buffer = b''
+while len(buffer) < n:
+    chunk = sock.recv(n - len(buffer))
+    if not chunk:
+        raise ConnectionError("Closed")
+    buffer += chunk
+return buffer
+
+NOTĂ PRESENTER:
+Aceste funcții sunt esențiale - TCP nu garantează că recv() returnează tot ce vrem.
+
+[SLIDE 19] - Demo: Protocol TEXT în acțiune
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Demonstrație Practică
+
+Terminal 1 - Server:
+$ python3 text_proto_server.py
+[SERVER] Listening on 0.0.0.0:3333
+
+Terminal 2 - Client:
+$ python3 text_proto_client.py localhost "Test message"
+[CLIENT] Received: Echo: Test message
+
+Terminal 3 - tshark:
+$ sudo tshark -i lo -f "tcp port 3333" -Y tcp
+... [PSH, ACK] Len=17 ...
+
+Observații:
+• Payload vizibil ca text în Wireshark
+• Delimitatorii sunt clari
+• Debugging trivial
+
+NOTĂ PRESENTER:
+Alternativ, folosiți netcat: echo "5 test" | nc localhost 3333
+
+================================================================================
+SECȚIUNEA 5: PROTOCOALE BINARE (Slides 20-24)
+================================================================================
+
+[SLIDE 20] - De ce protocoale binare?
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Motivația pentru Protocoale Binare
+
+Limitări TEXT:
+• Overhead: numere mari ocupă mulți bytes ca string
+• Parsing costisitor: atoi(), split(), regex
+• Ambiguitate: ce dacă payload conține delimiter?
+
+Avantaje BINARY:
+• Compact: int32 = 4 bytes mereu
+• Rapid: citire directă din memorie
+• Precis: tipuri fixe, fără conversii
+
+Comparație:
+TEXT:   "1234567890 payload"  = 11 + payload bytes
+BINARY: [4 bytes len][payload] = 4 + payload bytes
+
+NOTĂ PRESENTER:
+Protocol Buffers, MessagePack, BSON - toate sunt binare din aceleași motive.
+
+[SLIDE 21] - Design Protocol BINARY
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Structura Header-ului Binar
+
+Header propus (14 bytes):
+┌─────────────┬─────────┬──────────┬────────────┬───────────┬──────────┐
+│ MAGIC (2B)  │ VER (1B)│ TYPE (1B)│ LENGTH (2B)│ SEQ (4B)  │ CRC (4B) │
+│ "NP"        │ 0x01    │ 0x01-0x04│ big-endian │ contorizor│ zlib     │
+└─────────────┴─────────┴──────────┴────────────┴───────────┴──────────┘
+
+Tipuri mesaj:
+0x01 = ECHO_REQ    0x02 = ECHO_RESP
+0x03 = CMD_REQ     0x04 = CMD_RESP
+
+Flux:
+1. Citesc exact 14 bytes (header)
+2. Verific magic == "NP"
+3. Extrag length din header
+4. Citesc exact <length> bytes (payload)
+5. Verific CRC
+
+NOTĂ PRESENTER:
+Big-endian = network byte order. struct.pack folosește ">" pentru big-endian.
+
+[SLIDE 22] - struct.pack și struct.unpack
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Serializare Binară în Python
+
+Împachetare (pack):
+import struct
+header = struct.pack(">2sBBHI",
+    b"NP",     # 2s = 2 bytes string (magic)
+    1,         # B = unsigned byte (version)
+    1,         # B = unsigned byte (type)
+    len(payload),  # H = unsigned short (2 bytes)
+    seq_num    # I = unsigned int (4 bytes)
+)
+
+Despachetare (unpack):
+magic, ver, mtype, length, seq = struct.unpack(">2sBBHI", header[:10])
+
+Format specifiers:
+B = uint8, H = uint16, I = uint32, Q = uint64
+s = bytes, > = big-endian, < = little-endian
+
+NOTĂ PRESENTER:
+Network byte order e big-endian. Intel e little-endian. Atenție la conversii!
+
+[SLIDE 23] - Implementare Server BINARY
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Cod Python - Server Binar
+
+Flux procesare:
+┌────────────────────────────────────────────────────────────┐
+│ 1. raw = recv_exact(sock, 14)  # header complet           │
+│ 2. header = unpack_header(raw)                             │
+│ 3. if header.magic != b"NP": raise Error                   │
+│ 4. payload = recv_exact(sock, header.length)               │
+│ 5. if not validate_crc(header, payload): raise Error       │
+│ 6. response = process(header.type, payload)                │
+│ 7. resp_packet = pack_message(RESP_TYPE, response, seq)    │
+│ 8. sock.sendall(resp_packet)                               │
+└────────────────────────────────────────────────────────────┘
+
+Observații:
+• Fără parsing string - citim bytes direct
+• CRC validează integritatea end-to-end
+• Sequence number pentru corelarea request/response
+
+NOTĂ PRESENTER:
+Vezi binary_proto_server.py din starterkit pentru implementare completă.
+
+[SLIDE 24] - Demo: Protocol BINARY în acțiune
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Demonstrație Practică
+
+Terminal 1 - Server:
+$ python3 binary_proto_server.py
+[SERVER] Listening on 0.0.0.0:4444
+
+Terminal 2 - Client:
+$ python3 binary_proto_client.py localhost "Binary test"
+[CLIENT] Response type=0x02, seq=1, payload=b'Echo: Binary test'
+
+Terminal 3 - tshark (hex):
+$ sudo tshark -i lo -f "tcp port 4444" -x
+0000  4e 50 01 01 00 0b 00 00 00 01 ab cd ef 12 ...
+      ^^^^^ magic  ^^ type
+
+Observații:
+• Payload nu e citibil direct
+• Header structurat, compact
+• CRC validează integritatea
+
+NOTĂ PRESENTER:
+În Wireshark, folosiți "Follow TCP Stream" și selectați "Hex Dump".
+
+================================================================================
+SECȚIUNEA 6: PROTOCOL UDP PENTRU SENZORI (Slides 25-27)
+================================================================================
+
+[SLIDE 25] - UDP - Caracteristici pentru IoT
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: De ce UDP pentru Senzori?
+
+Caracteristici UDP:
+• Connectionless - fără handshake
+• Unreliable - fără garanții de livrare
+• Unordered - pachetele pot ajunge în orice ordine
+• Overhead mic - doar 8 bytes header
+
+Potrivit pentru:
+• Date care se actualizează frecvent (pierderea e OK)
+• Senzori cu resurse limitate
+• Streaming real-time
+• Discovery/broadcast
+
+Nu e potrivit pentru:
+• Comenzi critice (folosește TCP)
+• Transfer fișiere
+• Tranzacții
+
+NOTĂ PRESENTER:
+Senzori IoT trimit citiri la fiecare secundă - dacă una se pierde, vine alta imediat.
+
+[SLIDE 26] - Design Datagramă Senzor
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Structura Pachetului UDP Senzor
+
+Format (23 bytes total):
+┌─────────┬───────────┬─────────────┬────────────┬──────────┐
+│ VER (1B)│ SENSOR(2B)│ TEMP (4B)   │ LOC (12B)  │ CRC (4B) │
+│ 0x01    │ uint16    │ float32     │ string pad │ zlib     │
+└─────────┴───────────┴─────────────┴────────────┴──────────┘
+
+Pack:
+struct.pack(">BHf12sI", version, sensor_id, temp, location, crc)
+
+Unpack:
+version, sensor_id, temp, location, crc = struct.unpack(">BHf12sI", data)
+location = location.rstrip(b'\x00').decode()
+
+NOTĂ PRESENTER:
+12 bytes pentru locație permite "Laboratory1" dar nu și "Main Building Room 42".
+
+[SLIDE 27] - Demo: Senzori UDP în acțiune
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Demonstrație Practică
+
+Terminal 1 - Collector:
+$ python3 udp_sensor_server.py
+[COLLECTOR] Listening on 0.0.0.0:5555
+[SENSOR 1] temp=23.5°C, loc=Lab1
+[SENSOR 2] temp=18.2°C, loc=Server Room
+
+Terminal 2 - Senzor simulat:
+$ python3 udp_sensor_client.py --id 1 --location Lab1
+
+Terminal 3 - tshark:
+$ sudo tshark -i lo -f "udp port 5555" -x
+0000  01 00 01 41 bc 00 00 4c 61 62 31 00 00 ...
+
+Observații:
+• Fără conexiune - direct send()
+• Datagrame independente
+• Pierderea unei citiri e tolerabilă
+
+NOTĂ PRESENTER:
+Încercați să opriți collector-ul temporar - observați că senzorul continuă să trimită.
+
+================================================================================
+SECȚIUNEA 7: CONSOLIDARE (Slides 28-30)
+================================================================================
+
+[SLIDE 28] - Comparație TEXT vs BINARY vs UDP
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Sinteză: Alegerea Protocolului
+
+Tabel comparativ:
+┌─────────────────┬────────────────┬────────────────┬────────────────┐
+│ CRITERIU        │ TEXT/TCP       │ BINARY/TCP     │ BINARY/UDP     │
+├─────────────────┼────────────────┼────────────────┼────────────────┤
+│ Readability     │ ★★★★★          │ ★★☆☆☆          │ ★★☆☆☆          │
+│ Compactness     │ ★★☆☆☆          │ ★★★★★          │ ★★★★★          │
+│ Reliability     │ ★★★★★          │ ★★★★★          │ ★★☆☆☆          │
+│ Latency         │ ★★★☆☆          │ ★★★★☆          │ ★★★★★          │
+│ Debugging       │ ★★★★★          │ ★★☆☆☆          │ ★★☆☆☆          │
+│ Use case        │ API, Comenzi   │ Perf. critică  │ Senzori, Stream│
+└─────────────────┴────────────────┴────────────────┴────────────────┘
+
+NOTĂ PRESENTER:
+Nu există "cel mai bun" - alegerea depinde de context!
+
+[SLIDE 29] - Ce am învățat
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Recapitulare Curs 4
+
+Concepte cheie:
+✓ Nivelul fizic: medii, codificări, limitări
+✓ Nivelul legătură: Ethernet, MAC, ARP, switch-uri
+✓ Framing: cum delimităm mesajele într-un stream
+✓ CRC: validare integritate fără overhead criptografic
+✓ Protocol TEXT: human-readable, ușor debugging
+✓ Protocol BINARY: compact, eficient, precise
+✓ UDP datagrame: fire-and-forget, IoT-friendly
+
+Ce urmează (Săpt. 5):
+• Adresare IP, subnetting
+• Rutare și VLAN-uri
+
+NOTĂ PRESENTER:
+Verificați că studenții pot răspunde la întrebările de verificare de pe slide-ul următor.
+
+[SLIDE 30] - Întrebări de verificare
+─────────────────────────────────────────────────────────────────────────────────
+Titlu: Auto-evaluare
+
+Răspundeți în scris (3 minute):
+1. Ce face ARP și când se declanșează?
+2. De ce nu putem folosi recv(1024) și să presupunem că primim tot mesajul?
+3. Care e diferența între CRC și hash criptografic?
+4. Când am alege UDP în loc de TCP?
+5. Care sunt câmpurile obligatorii într-un header binar minimal?
+
+Răspunsuri așteptate:
+1. Mapare IP→MAC, la prima comunicare cu o adresă
+2. TCP e stream, recv poate returna parțial
+3. CRC detectează erori accidentale, hash protejează împotriva modificării intenționate
+4. Când pierderea e acceptabilă (streaming, senzori)
+5. Minim: version, type, length (restul sunt opționale dar utile)
+
+NOTĂ PRESENTER:
+Aceste întrebări pot fi folosite ca quiz la începutul laboratorului.
+
+================================================================================
+END OF OUTLINE
+================================================================================
+Total slides recomandate: 30
+Timp estimat prezentare: 90-100 minute (cu pauze și discuții)
+
+Note pentru generare PowerPoint:
+- Folosiți template ASE sau sobru academic
+- Diagrame: preferabil SVG sau PNG de înaltă rezoluție
+- Cod: font monospace, syntax highlighting
+- Evitați animații excesive - mențineți profesionalismul
+================================================================================
