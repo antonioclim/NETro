@@ -1,0 +1,495 @@
+# Curs 9 – Nivelul Sesiune și Nivelul Prezentare
+# Outline pentru PowerPoint / reveal.js
+
+================================================================================
+SLIDE 1: Titlu
+================================================================================
+Titlu: Curs 9 – Nivelul Sesiune (L5) și Nivelul Prezentare (L6)
+Subtitlu: Rețele de Calculatoare | Semestrul 2 | An 3
+Footer: ASE București | CSIE | Informatică Economică
+Imagine: Logo ASE + pictogramă stivă OSI evidențiind L5-L6
+
+================================================================================
+SLIDE 2: Obiective
+================================================================================
+Titlu: Ce vom învăța astăzi
+
+Bullet points:
+• Rolul nivelului sesiune în gestionarea dialogului între aplicații
+• Mecanismele nivelului prezentare pentru reprezentarea datelor
+• Relația dintre conexiuni și sesiuni
+• Codificări, compresie și criptare la nivel prezentare
+• Aplicații practice: FTP, sesiuni HTTP, formatarea datelor
+
+================================================================================
+SLIDE 3: Agenda
+================================================================================
+Titlu: Parcursul cursului
+
+1. Recapitulare: nivelul transport (5 min)
+2. Nivelul sesiune – concepte și mecanisme (20 min)
+3. Nivelul prezentare – transformarea datelor (20 min)
+4. Studiu de caz: Protocolul FTP (15 min)
+5. Mini-quiz interactiv (10 min)
+6. Întrebări și recapitulare (10 min)
+
+================================================================================
+SLIDE 4: Recapitulare L4
+================================================================================
+Titlu: De unde venim: Nivelul Transport
+
+Diagramă: Stiva OSI cu L4 evidențiat
+• TCP: conexiuni fiabile, ordonare, flow control
+• UDP: datagrame rapide, fără garanții
+• Porturi: identificarea aplicațiilor
+
+Întrebare: Ce lipsește pentru a gestiona o sesiune completă de transfer fișiere?
+
+================================================================================
+SLIDE 5: Poziționare OSI
+================================================================================
+Titlu: Nivelurile superioare în stiva OSI
+
+Diagramă vizuală:
+```
+┌─────────────────────┐
+│  L7 Aplicație       │  ← HTTP, FTP, SMTP
+├─────────────────────┤
+│  L6 Prezentare      │  ← Formatare, codificare
+├─────────────────────┤
+│  L5 Sesiune         │  ← Dialog, sincronizare
+├─────────────────────┤
+│  L4 Transport       │  ← TCP/UDP
+└─────────────────────┘
+```
+
+Notă: În practică, adesea combinate în protocoale de aplicație
+
+================================================================================
+SLIDE 6: L5 – Definiție
+================================================================================
+Titlu: Nivelul Sesiune – Ce este?
+
+Definiție box:
+"Nivelul sesiune gestionează și coordonează comunicația între aplicații,
+oferind mecanisme pentru stabilirea, menținerea și terminarea sesiunilor
+de dialog."
+
+Funcții principale:
+• Stabilirea și încheierea sesiunilor
+• Sincronizarea și punctele de control
+• Gestionarea dialogului (half/full duplex)
+
+================================================================================
+SLIDE 7: Conexiune vs Sesiune
+================================================================================
+Titlu: Conexiune TCP ≠ Sesiune Aplicație
+
+Diagramă comparativă (2 coloane):
+
+CONEXIUNE TCP:
+• La nivel L4
+• 3-way handshake
+• O singură "țeavă" de date
+• Se termină la FIN/RST
+
+SESIUNE:
+• La nivel L5-L7
+• Poate folosi multiple conexiuni
+• Menține context/stare
+• Durează cât utilizatorul decide
+
+Exemplu: FTP folosește 2 conexiuni TCP într-o singură sesiune
+
+================================================================================
+SLIDE 8: Diagrama Sesiune FTP
+================================================================================
+Titlu: Exemplu: Sesiunea FTP
+
+Diagramă temporală:
+```
+Client                    Server
+  │                          │
+  │──── Conexiune Control ───│ Port 21
+  │     (persistă)           │
+  │                          │
+  │── AUTH user/pass ───────>│
+  │<──── 230 OK ─────────────│
+  │                          │
+  │── PASV ─────────────────>│
+  │<──── 227 (port 5000) ────│
+  │                          │
+  │──── Conexiune Date ──────│ Port 5000
+  │     (temporară)          │
+  │                          │
+  │── RETR file.txt ────────>│
+  │<──── [date fișier] ──────│
+  │     Conexiune Date închisă
+  │                          │
+  │── QUIT ─────────────────>│
+  │<──── 221 Bye ────────────│
+  │     Sesiune încheiată    │
+```
+
+================================================================================
+SLIDE 9: Mecanisme L5 – Sincronizare
+================================================================================
+Titlu: Sincronizarea și Punctele de Control
+
+Concept: Checkpoints permit reluarea după erori
+
+Diagramă:
+```
+Transfer lung de date
+─────●──────●──────●──────●─────> 
+    CP1    CP2    CP3    CP4
+
+Eroare la 75%? Reia de la CP3!
+```
+
+Exemple reale:
+• FTP: comanda REST pentru reluare transfer
+• HTTP: header Range pentru download parțial
+• Baze de date: savepoints în tranzacții
+
+================================================================================
+SLIDE 10: Mecanisme L5 – Dialog
+================================================================================
+Titlu: Gestionarea Dialogului
+
+Moduri de dialog:
+
+1. SIMPLEX
+   A ───────────────────> B
+   (doar într-o direcție)
+
+2. HALF-DUPLEX
+   A <─────────────────> B
+   (pe rând, cu token)
+
+3. FULL-DUPLEX
+   A <═════════════════> B
+   (simultan în ambele direcții)
+
+Exemplu: Walkie-talkie vs telefon
+
+================================================================================
+SLIDE 11: L5 în practică
+================================================================================
+Titlu: Unde vedem nivelul sesiune?
+
+Tabel:
+
+| Protocol/Tehnologie | Mecanisme L5 |
+|---------------------|--------------|
+| HTTP/1.1 | Keep-Alive, cookies de sesiune |
+| WebSocket | Connection upgrade, ping/pong |
+| RPC | Session tokens, call IDs |
+| SSH | Canale multiplexate |
+| TLS | Session resumption |
+
+================================================================================
+SLIDE 12: Tranziție L5 → L6
+================================================================================
+Titlu: De la dialog la reprezentare
+
+"Acum că știm cum să gestionăm conversația,
+cum ne asigurăm că vorbim aceeași limbă?"
+
+Pictogramă: Traducător între două personaje
+
+================================================================================
+SLIDE 13: L6 – Definiție
+================================================================================
+Titlu: Nivelul Prezentare – Ce este?
+
+Definiție box:
+"Nivelul prezentare se ocupă de sintaxa și semantica datelor schimbate,
+asigurând că informația trimisă de o aplicație poate fi înțeleasă
+de aplicația receptoare."
+
+Funcții principale:
+• Codificarea datelor (character encoding)
+• Compresia datelor
+• Criptarea datelor
+
+================================================================================
+SLIDE 14: Codificare caractere
+================================================================================
+Titlu: De ce contează encoding-ul?
+
+Exemplu vizual:
+```
+"Rețele" în diferite codificări:
+
+UTF-8:  52 65 c8 9b 65 6c 65  (7 bytes)
+Latin-1: 52 65 ? 65 6c 65     (eroare!)
+ASCII:  52 65 ? 65 6c 65      (eroare!)
+```
+
+Probleme comune:
+• "Â" în loc de "ț"
+• Caractere diamant sau semne întrebării
+• Mojibake: "RÈÞELE" în loc de "REȚELE"
+
+Soluție: Standardizare pe UTF-8 (99% din web)
+
+================================================================================
+SLIDE 15: Byte Order
+================================================================================
+Titlu: Big Endian vs Little Endian
+
+Diagramă:
+
+Numărul 0x12345678 în memorie:
+
+BIG ENDIAN (Network Order):
+Adresă: 0    1    2    3
+Bytes:  12   34   56   78
+        ↑MSB           ↑LSB
+
+LITTLE ENDIAN (x86):
+Adresă: 0    1    2    3
+Bytes:  78   56   34   12
+        ↑LSB           ↑MSB
+
+Regulă: Protocoale de rețea folosesc BIG ENDIAN
+Conversie: htons(), htonl(), ntohs(), ntohl()
+
+================================================================================
+SLIDE 16: Serializare
+================================================================================
+Titlu: Serializarea Datelor
+
+Concept: Transformarea structurilor în secvențe de bytes
+
+Formate populare:
+
+| Format | Tip | Avantaje | Dezavantaje |
+|--------|-----|----------|-------------|
+| JSON | Text | Uman-readable, flexibil | Volum mare |
+| XML | Text | Standardizat, schema | Verbose |
+| Protocol Buffers | Binar | Compact, rapid | Necesită schema |
+| MessagePack | Binar | Compact, flexibil | Mai puțin răspândit |
+
+================================================================================
+SLIDE 17: Compresia
+================================================================================
+Titlu: Compresia Datelor
+
+Tipuri:
+• Lossless (fără pierderi): gzip, zlib, LZ4
+• Lossy (cu pierderi): JPEG, MP3 (pentru multimedia)
+
+Diagramă eficiență:
+```
+Fișier original: 1000 KB
+După gzip:        250 KB  (75% reducere)
+
+Throughput efectiv: 4x mai mare!
+```
+
+Când folosim:
+• HTTP: Accept-Encoding: gzip
+• WebSocket: per-message compression
+• Transfer fișiere: opțional în protocol
+
+================================================================================
+SLIDE 18: Criptarea
+================================================================================
+Titlu: Criptarea la Nivel Prezentare
+
+Diagramă:
+```
+   Plaintext          Ciphertext
+┌─────────────┐    ┌─────────────┐
+│ Hello World │ => │ @#$%^&*()!@ │
+└─────────────┘    └─────────────┘
+      │                  │
+      ↓                  ↓
+   Citibil           Necitibil
+   de oricine        fără cheie
+```
+
+Implementări:
+• TLS/SSL: cel mai comun pentru HTTPS
+• SSH: pentru acces terminal securizat
+• End-to-end: Signal, WhatsApp
+
+================================================================================
+SLIDE 19: Pipeline L6
+================================================================================
+Titlu: Pipeline-ul Nivelului Prezentare
+
+Diagramă flux:
+```
+Date Aplicație
+      │
+      ▼
+┌──────────────┐
+│ Serializare  │  struct → bytes
+└──────────────┘
+      │
+      ▼
+┌──────────────┐
+│  Compresie   │  reducere volum
+└──────────────┘
+      │
+      ▼
+┌──────────────┐
+│  Criptare    │  securizare
+└──────────────┘
+      │
+      ▼
+  Către L5/L4
+```
+
+La recepție: ordinea inversă
+
+================================================================================
+SLIDE 20: Studiu de caz – FTP
+================================================================================
+Titlu: FTP: Combinația L5 + L6
+
+Nivelul Sesiune în FTP:
+• Sesiune autentificată (USER/PASS)
+• Director curent menținut
+• Mod transfer (ASCII/BINARY)
+• Reluare cu REST
+
+Nivelul Prezentare în FTP:
+• Mod ASCII: conversie line endings
+• Mod BINARY: transfer exact
+• Encoding nume fișiere (UTF-8)
+
+================================================================================
+SLIDE 21: Demo – Protocol Custom
+================================================================================
+Titlu: Demo: Protocol Binar Custom
+
+Structura header (16 bytes):
+```
+┌────────────┬────────────┬────────────┬────────────┐
+│ Magic (4B) │ Length(4B) │ CRC-32(4B) │ Flags (4B) │
+│  "FTPC"    │ Big Endian │ Integritate│ Opțiuni    │
+└────────────┴────────────┴────────────┴────────────┘
+```
+
+Live: Vom vedea cum arată în Wireshark
+
+================================================================================
+SLIDE 22: Wireshark Capture
+================================================================================
+Titlu: Analiză Trafic – Ce vedem
+
+Screenshot Wireshark cu:
+• Lista pachete TCP
+• Header protocol custom evidențiat
+• Bytes interpretați
+
+Highlight:
+- Magic bytes: 46 54 50 43 = "FTPC"
+- Length: 00 00 00 20 = 32 bytes payload
+- CRC-32: checksum calculat
+
+================================================================================
+SLIDE 23: Mini-Quiz
+================================================================================
+Titlu: Verificare rapidă
+
+Întrebarea 1:
+Care nivel OSI se ocupă de gestionarea dialogului?
+A) Transport  B) Sesiune  C) Prezentare  D) Aplicație
+
+Întrebarea 2:
+Ce înseamnă "Network Byte Order"?
+A) Little Endian  B) Big Endian  C) Depinde de CPU
+
+Întrebarea 3:
+Ce mecanism permite reluarea unui transfer întrerupt?
+A) Compression  B) Checkpoint  C) Encryption
+
+================================================================================
+SLIDE 24: Quiz – Răspunsuri
+================================================================================
+Titlu: Răspunsuri
+
+1. B) Sesiune – L5 gestionează dialogul
+
+2. B) Big Endian – MSB primul, standard pentru rețele
+
+3. B) Checkpoint – puncte de sincronizare pentru recovery
+
+================================================================================
+SLIDE 25: Recapitulare
+================================================================================
+Titlu: Ce am învățat
+
+Nivelul Sesiune (L5):
+• Gestionează dialogul între aplicații
+• Menține starea sesiunii
+• Oferă sincronizare și recovery
+
+Nivelul Prezentare (L6):
+• Asigură reprezentarea corectă a datelor
+• Encoding, compresie, criptare
+• Pipeline de transformare
+
+================================================================================
+SLIDE 26: De ce contează
+================================================================================
+Titlu: La ce ne ajută în practică
+
+Pentru un programator:
+• Debugging protocoale – înțelegerea stratificării
+• Proiectare API-uri – alegerea formatului corect
+• Securitate – înțelegerea criptării
+• Optimizare – compresia și eficiența transferului
+
+================================================================================
+SLIDE 27: Săptămâna viitoare
+================================================================================
+Titlu: Preview: Curs 10
+
+Următorul subiect:
+"Nivelul Aplicație: HTTP, REST, SOAP"
+
+Pregătire:
+• Instalați Postman sau Insomnia
+• Revedeți conceptul de request/response
+• Opțional: citiți RFC 2616 (HTTP/1.1)
+
+================================================================================
+SLIDE 28: Resurse
+================================================================================
+Titlu: Bibliografie și Resurse
+
+Obligatoriu:
+• Kurose & Ross, Cap. 2, 9 (session/presentation concepts)
+• Documentație lab: lab.html din starterkit
+
+Opțional:
+• RFC 959 – FTP Protocol Specification
+• Stevens, TCP/IP Illustrated Vol. 1
+
+================================================================================
+SLIDE 29: Întrebări
+================================================================================
+Titlu: Întrebări?
+
+Imagine: Pictogramă întrebări
+
+Contact:
+• Email: [email cadru didactic]
+• Forum: [link platform educațională]
+• Office hours: [program consultații]
+
+================================================================================
+SLIDE 30: Final
+================================================================================
+Titlu: Mulțumesc!
+
+Subtitlu: Curs 9 – Nivelul Sesiune și Nivelul Prezentare
+
+Footer: © 2025 Rețele de Calculatoare | ASE București | Revolvix&Hypotheticalandrei
+

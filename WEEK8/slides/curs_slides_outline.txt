@@ -1,0 +1,428 @@
+================================================================================
+OUTLINE SLIDE-URI CURS 8 - NIVELUL TRANSPORT (TCP, UDP, TLS)
+================================================================================
+Disciplina: Rețele de Calculatoare
+Săptămâna: 8 | Anul 3, Semestrul 2 | Informatică Economică ASE București
+Export recomandat: PowerPoint / reveal.js / Google Slides
+================================================================================
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 1: TITLU
+──────────────────────────────────────────────────────────────────────────────
+• Nivelul Transport: TCP, UDP, TLS
+• Săptămâna 8 - Rețele de Calculatoare
+• [Logo universitate] [Logo curs]
+• Data: [auto-fill]
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 2: AGENDA
+──────────────────────────────────────────────────────────────────────────────
+• Ce vom învăța astăzi
+  - Rolul nivelului transport în stiva OSI/TCP-IP
+  - UDP: simplitate și performanță
+  - TCP: fiabilitate și control flux/congestie
+  - TLS: securitate la nivel transport
+  - Programare practică cu socket-uri
+• De ce contează pentru programatori
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 3: RECAPITULARE - UNDE NE AFLĂM
+──────────────────────────────────────────────────────────────────────────────
+• Săpt. 1-4: Fundamentele, modele arhitecturale, programare socket
+• Săpt. 5-6: Nivel rețea (IPv4, IPv6, subnetting, NAT)
+• Săpt. 7: Protocoale de rutare (RIP, OSPF)
+• Săpt. 8: NIVELUL TRANSPORT (TCP, UDP, TLS) ← SUNTEM AICI
+• Diagrama stiva: [evidențiere nivel transport între rețea și sesiune]
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 4: POZIȚIA NIVELULUI TRANSPORT
+──────────────────────────────────────────────────────────────────────────────
+• Diagrama verticală OSI cu evidențiere:
+  - Aplicație (HTTP, FTP, SMTP)
+  - Prezentare / Sesiune
+  - → TRANSPORT (TCP, UDP, TLS) ← FOCUS
+  - Rețea (IP)
+  - Legătură Date / Fizic
+• Funcție: livrare end-to-end între procese
+• Abstractizare: socket = endpoint de comunicare
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 5: MULTIPLEXARE ȘI DEMULTIPLEXARE
+──────────────────────────────────────────────────────────────────────────────
+• Problemă: un host rulează multiple aplicații
+• Soluție: PORTURI (0-65535)
+  - Well-known: 0-1023 (HTTP=80, HTTPS=443, SSH=22)
+  - Registered: 1024-49151
+  - Dynamic/Private: 49152-65535
+• Diagrama: multiple procese → multiplexor → un singur IP
+• Exemplu: browser (port 54321) ↔ web server (port 80)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 6: UDP - USER DATAGRAM PROTOCOL
+──────────────────────────────────────────────────────────────────────────────
+• Caracteristici:
+  - Connectionless (fără stabilire conexiune)
+  - Unreliable (fără garanții de livrare)
+  - Unordered (fără garantarea ordinii)
+  - Minimal overhead (doar 8 bytes header)
+• Când se folosește:
+  - Streaming video/audio (pierderi acceptabile)
+  - DNS queries (rapid, one-shot)
+  - Gaming (latență minimă)
+  - IoT sensors (simplitate)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 7: UDP - STRUCTURA HEADER
+──────────────────────────────────────────────────────────────────────────────
+• Diagrama header UDP (8 bytes total):
+  +------------------+------------------+
+  | Source Port (16) | Dest Port (16)   |
+  +------------------+------------------+
+  | Length (16)      | Checksum (16)    |
+  +------------------+------------------+
+  |              Payload                |
+  +-------------------------------------+
+• Checksum: opțional în IPv4, obligatoriu în IPv6
+• Length: include header + payload
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 8: UDP - EXEMPLU PYTHON
+──────────────────────────────────────────────────────────────────────────────
+• Server UDP (10 linii):
+  sock = socket.socket(AF_INET, SOCK_DGRAM)
+  sock.bind(('0.0.0.0', 9999))
+  data, addr = sock.recvfrom(1024)
+  sock.sendto(response, addr)
+• Client UDP (5 linii):
+  sock.sendto(b'Hello', ('server', 9999))
+  data, _ = sock.recvfrom(1024)
+• Notă: nu există connect() - fiecare pachet e independent
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 9: TCP - TRANSMISSION CONTROL PROTOCOL
+──────────────────────────────────────────────────────────────────────────────
+• Caracteristici fundamentale:
+  - Connection-oriented (stabilire explicită)
+  - Reliable (retransmisii, acknowledgments)
+  - Ordered (sequence numbers)
+  - Flow control (receiver nu se sufocă)
+  - Congestion control (rețeaua nu se sufocă)
+• Trade-off: overhead mai mare, latență inițială (handshake)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 10: TCP - STRUCTURA HEADER
+──────────────────────────────────────────────────────────────────────────────
+• Diagrama header TCP (20-60 bytes):
+  +------------------+------------------+
+  | Source Port (16) | Dest Port (16)   |
+  +------------------+------------------+
+  |         Sequence Number (32)        |
+  +-------------------------------------+
+  |      Acknowledgment Number (32)     |
+  +-------------------------------------+
+  |Offset|Rsvd|Flags| Window Size (16)  |
+  +------------------+------------------+
+  | Checksum (16)    | Urgent Ptr (16)  |
+  +------------------+------------------+
+• Flags: SYN, ACK, FIN, RST, PSH, URG
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 11: TCP - THREE-WAY HANDSHAKE
+──────────────────────────────────────────────────────────────────────────────
+• Diagrama secvențială:
+  CLIENT                    SERVER
+    |                         |
+    |--- SYN (seq=x) -------->|
+    |                         |
+    |<-- SYN-ACK (seq=y,ack=x+1)
+    |                         |
+    |--- ACK (ack=y+1) ------>|
+    |                         |
+    |     CONEXIUNE STABILITĂ |
+• De ce 3 pași? Sincronizare bidirecțională ISN
+• Captură tshark: observăm flags în header
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 12: TCP - SEQUENCE ȘI ACKNOWLEDGMENT
+──────────────────────────────────────────────────────────────────────────────
+• Sequence Number: identifică byte-ul curent
+• ACK Number: "am primit până la byte X, aștept X+1"
+• Exemplu transmisie:
+  - Sender: Seq=1000, 500 bytes payload
+  - Receiver: ACK=1500 ("aștept de la 1500")
+  - Sender: Seq=1500, 500 bytes payload
+  - Receiver: ACK=2000
+• Diagrama flux date cu numere secvență
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 13: TCP - FLOW CONTROL (SLIDING WINDOW)
+──────────────────────────────────────────────────────────────────────────────
+• Problemă: sender prea rapid pentru receiver
+• Soluție: câmp Window Size în header
+• Receiver anunță: "am buffer liber de N bytes"
+• Sender ajustează ritmul
+• Diagrama sliding window:
+  [sent+ack][sent not ack][can send][cannot send yet]
+• Zero Window: receiver cere pauză (buffer plin)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 14: TCP - CONGESTION CONTROL
+──────────────────────────────────────────────────────────────────────────────
+• Problemă: prea mult trafic în rețea → pierderi
+• Algoritmi clasici:
+  - Slow Start: crește exponențial până la threshold
+  - Congestion Avoidance: crește liniar
+  - Fast Retransmit: 3 duplicate ACKs → retransmisie
+  - Fast Recovery: evită slow start după pierdere
+• Grafic cwnd vs timp cu fazele de creștere
+• Modern: BBR (Bottleneck Bandwidth & RTT)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 15: TCP - TERMINAREA CONEXIUNII
+──────────────────────────────────────────────────────────────────────────────
+• Four-Way Handshake:
+  A                         B
+  |--- FIN ------------------->|
+  |<-- ACK --------------------|
+  |<-- FIN --------------------|
+  |--- ACK ------------------->|
+• TIME_WAIT: A așteaptă 2×MSL înainte de close complet
+• RST: închidere abruptă (eroare sau refuz)
+• Half-close: o parte poate închide trimiterea, citire continuă
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 16: TCP VS UDP - COMPARAȚIE
+──────────────────────────────────────────────────────────────────────────────
+• Tabel comparativ:
+  | Caracteristică | TCP           | UDP           |
+  |----------------|---------------|---------------|
+  | Conexiune      | Da            | Nu            |
+  | Fiabilitate    | Garantată     | Best-effort   |
+  | Ordine         | Păstrată      | Nu garantată  |
+  | Header         | 20-60 bytes   | 8 bytes       |
+  | Latență        | Mai mare      | Minimă        |
+  | Throughput     | Controlat     | Maxim posibil |
+• Alegerea depinde de cerințele aplicației
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 17: TLS - TRANSPORT LAYER SECURITY
+──────────────────────────────────────────────────────────────────────────────
+• Ce este TLS?
+  - Protocol de securitate peste TCP
+  - Succesorul SSL (SSL 3.0 → TLS 1.0 → 1.3)
+  - Folosit de HTTPS, SMTPS, IMAPS, etc.
+• Trei obiective:
+  1. Confidențialitate (criptare simetrică)
+  2. Integritate (MAC/AEAD)
+  3. Autentificare (certificate X.509)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 18: TLS - HANDSHAKE (SIMPLIFICAT)
+──────────────────────────────────────────────────────────────────────────────
+• TLS 1.3 Handshake (1-RTT):
+  CLIENT                         SERVER
+    |--- ClientHello ------------->|
+    |   (cipher suites, random)    |
+    |<-- ServerHello, Cert, Fin ---|
+    |   (chosen cipher, cert)      |
+    |--- Finished ---------------->|
+    |   (encrypted app data)       |
+• Comparație: TLS 1.2 necesita 2-RTT
+• Forward Secrecy: Diffie-Hellman Ephemeral
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 19: TLS - CERTIFICATE ȘI PKI
+──────────────────────────────────────────────────────────────────────────────
+• Certificate X.509: "document de identitate" digital
+  - Subject (cine este)
+  - Issuer (cine a semnat)
+  - Public Key
+  - Validity Period
+  - Signature
+• Chain of Trust: Root CA → Intermediate → Server
+• Verificare: browser-ul are root CA preinstalate
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 20: TLS - CRIPTARE ÎN PYTHON
+──────────────────────────────────────────────────────────────────────────────
+• Server TLS:
+  context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+  context.load_cert_chain('server.crt', 'server.key')
+  with context.wrap_socket(sock, server_side=True) as ssock:
+      data = ssock.recv(1024)
+• Client TLS:
+  context = ssl.create_default_context()
+  with context.wrap_socket(sock, server_hostname='example.com') as ssock:
+      ssock.send(b'GET / HTTP/1.1\r\n...')
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 21: HTTP SERVER - ARHITECTURĂ
+──────────────────────────────────────────────────────────────────────────────
+• Componente:
+  1. Socket listener (accept conexiuni)
+  2. Parser cereri HTTP
+  3. Handler rute / fișiere statice
+  4. Generator răspunsuri HTTP
+• Modele de concurență:
+  - Threading (simplu, overhead mare)
+  - Process forking (izolare, overhead)
+  - async/await (eficient, complex)
+• Diagrama flux: client → socket → parse → route → response
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 22: HTTP SERVER - PARSARE REQUEST
+──────────────────────────────────────────────────────────────────────────────
+• Format cerere HTTP/1.1:
+  GET /path HTTP/1.1\r\n
+  Host: example.com\r\n
+  User-Agent: Mozilla/5.0\r\n
+  \r\n
+  [body opțional]
+• Pași parsare:
+  1. Extrage request line: method, path, version
+  2. Parsează headers (key: value)
+  3. Citește body dacă Content-Length prezent
+• Cod Python: split pe \r\n, dicționar pentru headers
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 23: HTTP SERVER - GENERARE RESPONSE
+──────────────────────────────────────────────────────────────────────────────
+• Format răspuns HTTP/1.1:
+  HTTP/1.1 200 OK\r\n
+  Content-Type: text/html\r\n
+  Content-Length: 1234\r\n
+  \r\n
+  <html>...</html>
+• Status codes:
+  - 2xx: Success (200 OK, 201 Created)
+  - 3xx: Redirect (301, 302)
+  - 4xx: Client error (400, 404, 403)
+  - 5xx: Server error (500, 502, 503)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 24: REVERSE PROXY - CONCEPT
+──────────────────────────────────────────────────────────────────────────────
+• Ce este un reverse proxy?
+  - Server intermediar între client și backend
+  - Clientul nu știe de backend-uri
+• Funcții:
+  - Load balancing (distribuire trafic)
+  - SSL termination (decriptare centralizată)
+  - Caching (răspunsuri frecvente)
+  - Compression (gzip)
+  - Security (WAF, rate limiting)
+• Diagrama: Client → Reverse Proxy → Backend 1/2/3
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 25: LOAD BALANCING - ALGORITMI
+──────────────────────────────────────────────────────────────────────────────
+• Round Robin:
+  Request 1 → Backend A
+  Request 2 → Backend B
+  Request 3 → Backend A
+  ...
+• Weighted Round Robin: Backend-uri cu capacități diferite
+• Least Connections: trimite la cel mai puțin ocupat
+• IP Hash: aceeași IP → același backend (stickiness)
+• Random: selecție aleatorie (simplu, echilibrat statistic)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 26: WIRESHARK/TSHARK - ANALIZĂ TRAFIC
+──────────────────────────────────────────────────────────────────────────────
+• Captură TCP handshake:
+  tshark -i lo -f "tcp port 8080" -c 10
+• Filtre utile:
+  - tcp.port == 80
+  - http.request.method == "GET"
+  - tcp.flags.syn == 1
+  - tcp.analysis.retransmission
+• Output exemplu: pachete cu flags, seq, ack numbers
+• Interpretare: observăm three-way handshake complet
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 27: DEBUGGING REȚEA - TOOLBOX
+──────────────────────────────────────────────────────────────────────────────
+• Netcat (nc): test rapid conexiuni
+  nc -vz host 80        # test port
+  nc -l 9999            # listen
+• Curl: cereri HTTP complete
+  curl -v http://localhost:8080/
+• Tcpdump: captură low-level
+  tcpdump -i eth0 port 80 -X
+• Ss/Netstat: conexiuni active
+  ss -tuln              # listening ports
+• Lsof: procese și fișiere/socket-uri
+  lsof -i :8080         # cine folosește portul
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 28: SECURITATE LA NIVEL TRANSPORT
+──────────────────────────────────────────────────────────────────────────────
+• Amenințări:
+  - Eavesdropping (interceptare date)
+  - Man-in-the-middle (alterare trafic)
+  - Replay attacks
+  - DoS/DDoS
+• Protecție:
+  - TLS pentru criptare și autentificare
+  - Certificate pinning
+  - Firewall reguli pentru porturi
+  - Rate limiting
+• Directory traversal în HTTP: "../../../etc/passwd"
+  → Soluție: normalizare cale, whitelist
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 29: CONTRIBUȚIA LA PROIECT
+──────────────────────────────────────────────────────────────────────────────
+• Ce livrați această săptămână:
+  1. Server HTTP funcțional (GET static files)
+  2. Reverse proxy cu 2+ backend-uri
+  3. Captură tshark annotată (handshake + request/response)
+  4. README cu instrucțiuni rulare
+• Integrare în proiectul de echipă:
+  - Componenta "frontend server"
+  - Pregătire pentru Săpt. 9 (FTP) și Săpt. 10 (DNS, SSH)
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 30: RECAPITULARE ȘI ÎNTREBĂRI
+──────────────────────────────────────────────────────────────────────────────
+• Ce am învățat:
+  - UDP: rapid, simplu, fără garanții
+  - TCP: fiabil, ordonat, overhead
+  - TLS: securitate (criptare + autentificare)
+  - HTTP Server: socket → parse → route → respond
+  - Reverse Proxy: load balancing, SSL termination
+• Unde se folosește în practică:
+  - Orice aplicație web (backend development)
+  - Microservicii (service mesh, load balancers)
+  - Cloud infrastructure (ALB, NLB)
+• Săptămâna viitoare: Nivelul Sesiune și Prezentare
+
+──────────────────────────────────────────────────────────────────────────────
+SLIDE 31: RESURSE ȘI BIBLIOGRAFIE
+──────────────────────────────────────────────────────────────────────────────
+• RFCs:
+  - RFC 793: TCP
+  - RFC 768: UDP
+  - RFC 8446: TLS 1.3
+  - RFC 7230-7235: HTTP/1.1
+• Cărți:
+  - Kurose & Ross, "Computer Networking" (Cap. 3)
+  - Stevens, "TCP/IP Illustrated Vol. 1"
+• Online:
+  - https://www.wireshark.org/docs/
+  - https://docs.python.org/3/library/socket.html
+
+================================================================================
+NOTE PENTRU PREZENTATOR
+================================================================================
+• Timing recomandat: 80-90 minute (fără pauze)
+• Demo live recomandate:
+  - Slide 11: captură handshake cu tshark
+  - Slide 21-23: rulare demo_http_server.py
+  - Slide 24-25: rulare demo_reverse_proxy.py
+• Întrebări de verificare după fiecare secțiune majoră
+• Studenții ar trebui să aibă laptopuri pentru exerciții practice
+
+================================================================================
+© Revolvix&Hypotheticalandrei
+================================================================================

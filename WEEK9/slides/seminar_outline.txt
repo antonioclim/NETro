@@ -1,0 +1,434 @@
+# Seminar 9 – Protocoale de Fișiere: Server FTP Custom
+# Outline pentru PowerPoint / reveal.js
+
+================================================================================
+SLIDE 1: Titlu
+================================================================================
+Titlu: Seminar 9 – Protocoale de Fișiere
+Subtitlu: Server FTP Custom și Testare Multi-Client
+Footer: ASE București | Rețele de Calculatoare | Revolvix&Hypotheticalandrei
+Imagine: Pictogramă transfer fișiere + containere Docker
+
+================================================================================
+SLIDE 2: Obiective Practice
+================================================================================
+Titlu: Ce vom realiza astăzi
+
+Checklist format:
+☐ Implementăm un protocol binar custom (pseudo-FTP)
+☐ Testăm transferuri client-server
+☐ Capturăm și analizăm traficul cu tshark
+☐ Orchestrăm multi-client cu Docker Compose
+☐ (Opțional) Simulăm în Mininet
+
+================================================================================
+SLIDE 3: Materiale necesare
+================================================================================
+Titlu: Pregătire
+
+Ce trebuie să aveți:
+• starterkit_s9/ descărcat și dezarhivat
+• Python 3.8+ instalat
+• Docker instalat și funcțional
+• Terminal/CLI disponibil
+
+Verificare rapidă:
+```bash
+make verify
+```
+Toate check-urile trebuie să fie verzi ✓
+
+================================================================================
+SLIDE 4: Agenda
+================================================================================
+Titlu: Parcursul seminarului
+
+| Timp | Activitate |
+|------|-----------|
+| 10 min | Setup și verificare mediu |
+| 15 min | Demo endianness și framing |
+| 20 min | Server + Client pseudo-FTP |
+| 20 min | Captură Wireshark |
+| 20 min | Docker multi-client |
+| 15 min | Debugging + Q&A |
+
+================================================================================
+SLIDE 5: Structura Protocolului
+================================================================================
+Titlu: Header Protocol Pseudo-FTP
+
+Diagramă:
+```
+┌──────────────────────────────────────────────────────────┐
+│                    HEADER (16 bytes)                     │
+├──────────────┬──────────────┬──────────────┬────────────┤
+│ Magic (4B)   │ Length (4B)  │ CRC-32 (4B)  │ Flags (4B) │
+│ 0x46545043   │ Big Endian   │ Big Endian   │ Bit 0:Comp │
+│ = "FTPC"     │              │              │            │
+└──────────────┴──────────────┴──────────────┴────────────┘
+```
+
+De ce fiecare câmp:
+• Magic: identificare rapidă protocol
+• Length: știm cât să citim
+• CRC-32: verificare integritate
+• Flags: opțiuni extensibile
+
+================================================================================
+SLIDE 6: Comenzi Suportate
+================================================================================
+Titlu: Protocoal pseudo-FTP – Comenzi
+
+| Comandă | Sintaxă | Descriere |
+|---------|---------|-----------|
+| AUTH | AUTH user:pass | Autentificare |
+| PWD | PWD | Director curent |
+| LIST | LIST [pattern] | Listare fișiere |
+| GET | GET filename | Descărcare fișier |
+| PUT | PUT filename | Încărcare fișier |
+| QUIT | QUIT | Închidere sesiune |
+
+================================================================================
+SLIDE 7: Demo 1 – Endianness
+================================================================================
+Titlu: Demo: Înțelegerea Byte Order
+
+Terminal live:
+```bash
+cd python/exercises
+python ex_9_01_endianness.py
+```
+
+Observăm:
+• 0x12345678 → Big Endian: 12 34 56 78
+• 0x12345678 → Little Endian: 78 56 34 12
+• struct.pack folosește '>' pentru network order
+
+================================================================================
+SLIDE 8: Demo 2 – Server
+================================================================================
+Titlu: Demo: Pornirea Serverului
+
+Terminal 1:
+```bash
+cd python/demos
+python ex_9_02_pseudo_ftp.py --mode server --port 9021
+```
+
+Output așteptat:
+```
+[INFO] Server started on 0.0.0.0:9021
+[INFO] Waiting for connections...
+```
+
+⚠️ Lăsați serverul să ruleze!
+
+================================================================================
+SLIDE 9: Demo 3 – Client
+================================================================================
+Titlu: Demo: Sesiune Client
+
+Terminal 2:
+```bash
+python ex_9_02_pseudo_ftp.py --mode client --host localhost --port 9021
+```
+
+Secvența de comenzi:
+```
+> AUTH admin:secret123
+[OK] Authentication successful
+
+> LIST
+[OK] document.txt (1024), sample.bin (2048)
+
+> GET document.txt
+[OK] Downloaded 1024 bytes
+
+> QUIT
+```
+
+================================================================================
+SLIDE 10: Cod – Header Pack
+================================================================================
+Titlu: Cum împachetăm header-ul
+
+```python
+import struct
+import zlib
+
+HEADER_FORMAT = '>4sIII'  # big-endian: 4s + 3 x uint32
+MAGIC = b'FTPC'
+
+def make_header(payload, compressed=False):
+    crc = zlib.crc32(payload) & 0xffffffff
+    flags = 1 if compressed else 0
+    return struct.pack(
+        HEADER_FORMAT,
+        MAGIC,
+        len(payload),
+        crc,
+        flags
+    )
+```
+
+================================================================================
+SLIDE 11: Cod – Header Unpack
+================================================================================
+Titlu: Cum despachetăm header-ul
+
+```python
+def parse_header(data):
+    magic, length, crc, flags = struct.unpack(
+        HEADER_FORMAT, 
+        data[:16]
+    )
+    
+    if magic != MAGIC:
+        raise ValueError("Invalid magic bytes")
+    
+    return {
+        'length': length,
+        'crc': crc,
+        'compressed': bool(flags & 1)
+    }
+```
+
+================================================================================
+SLIDE 12: Captură Wireshark
+================================================================================
+Titlu: Capturarea Traficului
+
+Pași:
+1. Porniți captura:
+```bash
+tshark -i lo -f "tcp port 9021" -w capture.pcap &
+```
+
+2. Generați trafic (demo client-server)
+
+3. Opriți captura:
+```bash
+kill %1
+```
+
+4. Analizați:
+```bash
+tshark -r capture.pcap -x | head -50
+```
+
+================================================================================
+SLIDE 13: Interpretare Captură
+================================================================================
+Titlu: Ce vedem în captură
+
+Screenshot/Exemplu hex:
+```
+0000  46 54 50 43 00 00 00 10 a1 b2 c3 d4 00 00 00 00
+      │         │              │              │
+      └─ MAGIC  └─ LEN=16     └─ CRC        └─ FLAGS
+```
+
+Filtre utile:
+• `tcp.port == 9021` – tot traficul
+• `tcp.len > 0` – doar cu payload
+• `frame contains "FTPC"` – pachete protocol
+
+================================================================================
+SLIDE 14: Docker Setup
+================================================================================
+Titlu: Pregătire Docker Compose
+
+Fișier docker-compose.yml:
+```yaml
+services:
+  ftp-server:
+    build: .
+    ports: ["9021:9021"]
+    
+  client-1:
+    build: .
+    depends_on: [ftp-server]
+    command: python client_test.py --tasks get
+    
+  client-2:
+    build: .
+    depends_on: [ftp-server]
+    command: python client_test.py --tasks put
+```
+
+================================================================================
+SLIDE 15: Docker Execuție
+================================================================================
+Titlu: Rularea Multi-Client
+
+```bash
+cd docker/
+docker compose up
+```
+
+Output:
+```
+ftp-server  | [INFO] Listening on 0.0.0.0:9021
+client-1    | [OK] Connected to ftp-server:9021
+client-2    | [OK] Connected to ftp-server:9021
+client-1    | [OK] GET completed
+client-2    | [OK] PUT completed
+```
+
+Cleanup:
+```bash
+docker compose down -v
+```
+
+================================================================================
+SLIDE 16: Debugging Tips
+================================================================================
+Titlu: Probleme Frecvente și Soluții
+
+| Problemă | Cauză | Soluție |
+|----------|-------|---------|
+| Connection refused | Server nu rulează | Verifică `netstat -tlnp \| grep 9021` |
+| Invalid magic | Protocol mismatch | Verifică versiunea client/server |
+| CRC mismatch | Date corupte | Verifică compresie on/off |
+| Port in use | Container vechi | `docker compose down` |
+
+================================================================================
+SLIDE 17: Exerciții
+================================================================================
+Titlu: Exerciții pentru practică
+
+⭐ INFO – Adăugați comanda INFO
+⭐⭐ LIST wildcard – Suport pentru pattern
+⭐⭐ MKDIR – Creare directoare
+⭐⭐⭐ REST – Reluare transferuri
+⭐⭐⭐ Rate limit – Limitare viteză
+🏆 MGET/MPUT – Transfer multiplu
+
+Alegeți minimum 2 pentru bonus!
+
+================================================================================
+SLIDE 18: Exercițiu Ghidat – INFO
+================================================================================
+Titlu: Exercițiu: Comanda INFO
+
+Cerință: Returnează informații server
+
+Pas 1: Adăugați în dicționar stats:
+```python
+server_stats = {
+    'version': '1.0.0',
+    'start_time': time.time(),
+    'sessions': 0
+}
+```
+
+Pas 2: Handler pentru INFO:
+```python
+def handle_info(self):
+    uptime = time.time() - server_stats['start_time']
+    return f"Version: {server_stats['version']}, " \
+           f"Uptime: {uptime:.0f}s"
+```
+
+================================================================================
+SLIDE 19: Mininet (Opțional)
+================================================================================
+Titlu: Simulare cu Mininet
+
+Topologie simplă:
+```
+    h1 ──── s1 ──── h2
+  (server)      (client)
+```
+
+Comenzi:
+```bash
+sudo python topo_base.py
+mininet> h1 python server.py &
+mininet> h2 python client.py --host 10.0.0.1
+```
+
+Adăugare latență:
+```bash
+mininet> sh tc qdisc add dev s1-eth1 root netem delay 100ms
+```
+
+================================================================================
+SLIDE 20: Verificare Finală
+================================================================================
+Titlu: Checklist Predare
+
+☐ Server pornit și funcțional
+☐ Client executat comenzi cu succes
+☐ Captură .pcap generată
+☐ Docker multi-client rulat
+☐ Notă reflexivă completată
+
+Fișiere de predat:
+• pcap/session_capture.pcap
+• screenshot-uri demonstrație
+• (bonus) cod exerciții rezolvate
+
+================================================================================
+SLIDE 21: Recapitulare
+================================================================================
+Titlu: Ce am realizat
+
+✓ Implementat protocol binar cu header structurat
+✓ Testat client-server cu sesiuni autentificate
+✓ Analizat trafic la nivel de bytes
+✓ Orchestrat containere pentru test concurent
+
+Concepte aplicate:
+• Nivelul Sesiune: autentificare, stare
+• Nivelul Prezentare: encoding, integritate
+
+================================================================================
+SLIDE 22: Săptămâna Viitoare
+================================================================================
+Titlu: Preview: Seminar 10
+
+Subiect: Servicii de rețea – DNS, SSH, FTP în containere
+
+Pregătire:
+• Revedeți comenzi Docker de bază
+• Instalați OpenSSH client
+• Citiți despre DNS resolution
+
+================================================================================
+SLIDE 23: Resurse
+================================================================================
+Titlu: Link-uri Utile
+
+Documentație:
+• Python struct: docs.python.org/3/library/struct.html
+• Docker Compose: docs.docker.com/compose/
+• tshark man: wireshark.org/docs/man-pages/tshark.html
+
+Starterkit:
+• HTML interactiv: html_prezentari/seminar.html
+• README complet: README.md
+
+================================================================================
+SLIDE 24: Întrebări
+================================================================================
+Titlu: Întrebări?
+
+Imagine: Pictogramă FAQ
+
+Suport:
+• În timpul laboratorului: ridicați mâna
+• După seminar: email sau forum
+• Office hours: [program]
+
+================================================================================
+SLIDE 25: Final
+================================================================================
+Titlu: Succes la laborator!
+
+Subtitlu: Seminar 9 – Protocoale de Fișiere
+
+Remember:
+"The best way to understand a protocol is to implement one."
+
+Footer: © 2025 Rețele de Calculatoare | ASE București | Revolvix&Hypotheticalandrei

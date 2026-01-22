@@ -1,0 +1,5 @@
+# Dependențe Python pentru Starterkit S9
+# Instalare: pip install --break-system-packages -r requirements.txt
+
+pyftpdlib>=1.5.0    # Server FTP pentru demo
+

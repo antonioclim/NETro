@@ -1,0 +1,4 @@
+Salut de la Serverul HTTP ASE Săptămâna 8!
+Acesta este un fișier de test servit prin socket-uri TCP.
+Rețele de Calculatoare - Săptămâna 8
+

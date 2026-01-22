@@ -1,0 +1,19 @@
+[13:24:29] [INFO] Demo automat pornit
+[13:24:29] [INFO] Configurație: WEEK=8, HTTP_PORT=8080, PROXY_PORT=8888
+[13:24:29] [INFO] Artefacte în: /home/claude/RO/week8_work/artifacts
+[13:24:29] [STEP] [1/8] Verificare precondiții...
+[13:24:29] [WARN]   tcpdump indisponibil (nu se va genera demo.pcap)
+[13:24:29] [INFO]   Precondiții OK
+[13:24:29] [STEP] [2/8] Skip captură (quick mode sau tcpdump indisponibil)
+[13:24:29] [STEP] [3/8] Demo 1: Server HTTP simplu...
+[13:24:30] [INFO]   Server HTTP pornit pe port 8080
+[13:24:30] [INFO]   ✓ GET / → 200 OK
+[13:24:30] [INFO]   ✓ GET /not-found → 404
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 2220
+Connection: close
+Server: ASE-S8-Server/1.0
+X-Backend: http-demo
+
+[13:24:30] [STEP] [4/8] Demo 2: Pornire backends...
