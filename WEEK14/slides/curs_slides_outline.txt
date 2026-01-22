@@ -1,0 +1,210 @@
+================================================================================
+OUTLINE SLIDE-URI CURS 14 - RECAPITULARE ȘI INTEGRARE
+Rețele de Calculatoare / Computer Networks
+================================================================================
+
+SECȚIUNEA A: DESCHIDERE ȘI MOTIVAȚIE (5 min, 3 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 1: Titlu
+- Titlu: "Săptămâna 14: Recapitulare și Integrare"
+- Subtitlu: "De la pachete la aplicații - Perspectiva completă"
+- Visual: Diagrama stivă OSI stilizată cu toate straturile evidențiate
+
+SLIDE 2: Ce vom face astăzi
+- Recapitulare sistematică: 7 straturi → 4 piloni esenșiali
+- Checklist de diagnostic: metodologie pas cu pas
+- Pregătire evaluare proiect: ce se așteaptă
+- Visual: Timeline cu 3 blocuri (Teorie / Metodologie / Practică)
+
+SLIDE 3: De ce contează recapitularea
+- Fragmentele se leagă într-o imagine coerentă
+- Diagnosticul structurat → rezolvare rapidă
+- Baza pentru: cloud, DevOps, securitate, IoT
+- Visual: Puzzle care se completează
+
+================================================================================
+SECȚIUNEA B: MODELUL STRATIFICAT - SINTEZĂ (15 min, 6 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 4: Cele 7 straturi - Vedere de ansamblu
+- Fizic → Legătură → Rețea → Transport → Sesiune → Prezentare → Aplicație
+- Focus practică: Legătură, Rețea, Transport, Aplicație
+- Visual: Stivă verticală cu exemple de protocol per strat
+
+SLIDE 5: Stratul Legătură de Date (Data Link)
+- Rolul: Comunicare hop-to-hop, cadre Ethernet
+- Adresare: MAC (48 biți, format: aa:bb:cc:dd:ee:ff)
+- Concepte cheie: Switch, broadcast domain, ARP
+- Întrebare control: "Cum află un host MAC-ul vecinului?"
+
+SLIDE 6: Stratul Rețea (Network)
+- Rolul: Rutare end-to-end, pachete IP
+- Adresare: IPv4 (32 biți), subnetting CIDR
+- Concepte cheie: Router, TTL, fragmentare, default gateway
+- Întrebare control: "Ce se întâmplă când TTL ajunge la 0?"
+
+SLIDE 7: Stratul Transport
+- TCP vs UDP - comparație sintetică
+  - TCP: conexiune, fiabilitate, flow control, congestion control
+  - UDP: fără conexiune, best-effort, overhead minim
+- Porturi: <1024 privilegiate, >49151 efemere
+- Întrebare control: "Când alegi UDP în loc de TCP?"
+
+SLIDE 8: Stratul Aplicație
+- HTTP/HTTPS: request-response, metode, coduri status
+- DNS: rezoluția numelor, ierarhie, caching
+- SMTP/IMAP: flux email (săptămâna 13)
+- Visual: Diagrama flux HTTP GET simplificat
+
+SLIDE 9: Încapsularea - Imaginea completă
+- Date → Segment → Pachet → Cadru → Biți
+- Header-e adăugate la fiecare strat
+- Decapsulare la destinație (ordine inversă)
+- Visual: Animație încapsulare cu culori per strat
+
+================================================================================
+SECȚIUNEA C: ADRESARE ȘI IDENTIFICARE (10 min, 4 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 10: Tipuri de adrese - Catalog complet
+- MAC: identificare hardware, local la segment
+- IP: identificare logică, rutabilă global
+- Port: identificare proces/serviciu
+- Visual: Tabel 3 coloane cu caracteristici
+
+SLIDE 11: Subnetting și CIDR - Recapitulare practică
+- Notație CIDR: IP/prefix (ex: 192.168.1.0/24)
+- Calculul adreselor disponibile: 2^(32-prefix) - 2
+- Network address vs Broadcast address
+- Exemplu rezolvat: 10.0.0.0/22 → câte host-uri?
+
+SLIDE 12: NAT și adrese private
+- Clase private: 10.x, 172.16-31.x, 192.168.x
+- NAT: traducere adrese, conservare IPv4
+- Port forwarding: expunere servicii interne
+- Visual: Diagrama NAT cu tabel traduceri
+
+SLIDE 13: DNS - De la nume la IP
+- Ierarhia: Root → TLD → Authoritative
+- Query types: A, AAAA, MX, CNAME, TXT
+- Caching și TTL: performanță vs actualizare
+- Întrebare control: "De ce TTL mic la failover?"
+
+================================================================================
+SECȚIUNEA D: TCP ÎN DETALIU (10 min, 4 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 14: Three-Way Handshake
+- SYN → SYN-ACK → ACK
+- Secvență numerică: ISN (Initial Sequence Number)
+- De ce 3 pași? Sincronizare bidirecțională
+- Visual: Diagrama secvență cu timestamp-uri
+
+SLIDE 15: Transmisia datelor
+- Sequence number, Acknowledgment number
+- Sliding window: eficiență transmisie
+- Retransmisie la timeout sau duplicate ACK
+- Visual: Timeline pachete cu ACK-uri
+
+SLIDE 16: Flow Control și Congestion Control
+- Flow control: receiver window, prevenire inundare
+- Congestion control: slow start, congestion avoidance
+- cwnd vs rwnd: care e limita?
+- Visual: Grafic evoluție cwnd în timp
+
+SLIDE 17: Terminarea conexiunii
+- FIN → ACK → FIN → ACK (four-way)
+- Starea TIME_WAIT: de ce 2×MSL?
+- RST: terminare abruptă
+- Întrebare control: "Ce probleme apar fără TIME_WAIT?"
+
+================================================================================
+SECȚIUNEA E: CHECKLISTUL DE DIAGNOSTIC (15 min, 5 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 18: Metodologia sistematică
+- De ce checklist? Evitare presupuneri, economie timp
+- Bottom-up vs Top-down: când folosești fiecare
+- Documentare: notează ce ai verificat
+- Visual: Flowchart decizie
+
+SLIDE 19: Pasul 1-2: Verificare locală
+- Pas 1: IP și configurație (`ip addr`, `ip route`)
+- Pas 2: Conectivitate locală (`ping gateway`)
+- Ce cauți: IP valid, gateway corect, link up
+- Greșeli tipice: DHCP nefuncțional, cable deconectat
+
+SLIDE 20: Pasul 3-4: Conectivitate externă
+- Pas 3: DNS funcțional (`nslookup`, `dig`)
+- Pas 4: Conectivitate Internet (`ping 8.8.8.8`)
+- Ce cauți: rezoluție OK, pachete ajung
+- Greșeli tipice: DNS greșit, firewall blocaj
+
+SLIDE 21: Pasul 5-6: Aplicația și analiza
+- Pas 5: Portul serviciului (`netstat -tlnp`, `ss`)
+- Pas 6: Captură trafic (`tcpdump`, `tshark`)
+- Ce cauți: serviciu ascultă, pachete corecte
+- Greșeli tipice: port greșit, firewall local
+
+SLIDE 22: Instrumentele cheie
+- Tabel: Instrument → Ce verifică → Comandă tipică
+  - ping: conectivitate ICMP
+  - traceroute: calea pachetelor
+  - netstat/ss: porturi deschise
+  - tcpdump/tshark: conținut pachete
+  - curl/nc: test aplicație
+- Visual: Iconuri pentru fiecare instrument
+
+================================================================================
+SECȚIUNEA F: PREGĂTIRE PROIECT (8 min, 3 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 23: Ce se așteaptă la proiect
+- Topologie funcțională în Mininet
+- Minim 2 servicii care comunică
+- Captură trafic cu interpretare
+- Documentație: diagrama + explicații
+
+SLIDE 24: Criterii de evaluare (preview)
+- Complexitate tehnică: 40%
+- Funcționalitate demonstrată: 30%
+- Calitatea prezentării: 20%
+- Documentație: 10%
+- Visual: Bară orizontală cu procente
+
+SLIDE 25: Greșeli de evitat
+- Topologie prea simplă (doar 2 hosturi, fără rutare)
+- Cod copiat fără înțelegere
+- Lipsa capturii sau interpretării
+- Prezentare fără demonstrație live
+- Visual: Lista cu iconuri ✗
+
+================================================================================
+SECȚIUNEA G: ÎNCHIDERE ȘI REFLECȚIE (5 min, 2 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 26: Ce am învățat în acest semestru
+- Straturi și protocoale: limbajul rețelelor
+- Adresare și rutare: cum ajung pachetele
+- TCP/UDP: fiabilitate vs viteză
+- Diagnostic: metodologie sistematică
+- Visual: Mindmap cu conexiuni
+
+SLIDE 27: Unde mergem de aici
+- Cloud networking: VPC, load balancing
+- Containerizare: Docker networking
+- Securitate: firewall, VPN, TLS
+- Automatizare: Infrastructure as Code
+- Mesaj final: "Rețelele sunt baza oricărei aplicații moderne"
+
+================================================================================
+TIMING TOTAL: ~68 min (flexibil pentru întrebări)
+SLIDE-URI TOTALE: 27
+
+NOTE PENTRU PREZENTATOR:
+- Slide-urile 5-8: pausă pentru întrebări rapide
+- Slide-urile 18-22: demonstrație live recomandată
+- Slide-ul 24: poate fi extins cu exemple concrete
+- Rezervă 10-15 min pentru întrebări finale
+================================================================================

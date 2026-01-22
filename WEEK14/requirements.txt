@@ -1,0 +1,23 @@
+# requirements.txt — Dependențe Python pentru Starterkit S14
+# Instalare: pip3 install -r requirements.txt --break-system-packages
+
+# Mininet este instalat la nivel de sistem (apt install mininet)
+# Aceste pachete sunt pentru funcționalități suplimentare
+
+# Fără dependențe externe obligatorii - folosim doar standard library
+# Pachetele de mai jos sunt opționale pentru funcționalități extinse
+
+# Opțional: pentru procesare JSON avansată
+# jsonschema>=4.0.0
+
+# Opțional: pentru teste
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+
+# Opțional: pentru formatare cod
+# black>=23.0.0
+# isort>=5.0.0
+# flake8>=6.0.0
+
+# Notă: Toate aplicațiile din kit folosesc doar Python standard library
+# pentru compatibilitate maximă cu medii minimale (VM CLI)

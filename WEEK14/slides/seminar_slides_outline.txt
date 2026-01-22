@@ -1,0 +1,199 @@
+================================================================================
+OUTLINE SLIDE-URI SEMINAR 14 - EVALUARE PROIECTE ȘI APĂRARE
+Rețele de Calculatoare / Computer Networks
+================================================================================
+
+SECȚIUNEA A: DESCHIDERE (5 min, 2 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 1: Titlu seminar
+- Titlu: "Seminar 14: Evaluarea Proiectelor de Echipă"
+- Subtitlu: "Demonstrație, Apărare și Feedback"
+- Visual: Iconuri echipă + network topology
+
+SLIDE 2: Agenda sesiunii
+- Structura prezentărilor (7-10 min/echipă)
+- Criteriile de evaluare
+- Formatul întrebărilor
+- Timeline: câte echipe, ordine
+- Visual: Timeline grafic
+
+================================================================================
+SECȚIUNEA B: STRUCTURA PREZENTĂRII (5 min, 3 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 3: Ce trebuie să conțină prezentarea
+- Diagrama topologiei (1-2 min)
+- Explicația componentelor (2-3 min)
+- Demonstrația live (3-4 min)
+- Concluzii și limitări (1 min)
+- Visual: Template structură
+
+SLIDE 4: Diagrama topologiei - Cerințe
+- Hosturi, switch-uri, routere clar etichetate
+- Adrese IP vizibile
+- Fluxul de date marcat cu săgeți
+- Serviciile evidențiate (ex: server HTTP pe h2)
+- Exemplu: diagramă bună vs diagramă slabă
+
+SLIDE 5: Demonstrația live - Sfaturi
+- Pregătește mediul ÎNAINTE (VM pornită, Mininet curat)
+- Testează de 2-3 ori în prealabil
+- Ai un backup (captură pre-înregistrată)
+- Explică ce faci și CE AȘTEPȚI să vezi
+- Visual: Checklist pregătire demo
+
+================================================================================
+SECȚIUNEA C: CRITERIILE DE EVALUARE (10 min, 5 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 6: Grila de evaluare - Vedere generală
+- Complexitate tehnică: 40 puncte
+- Funcționalitate: 30 puncte
+- Prezentare: 20 puncte
+- Documentație: 10 puncte
+- Total: 100 puncte
+- Visual: Pie chart cu procente
+
+SLIDE 7: Complexitate tehnică (40p)
+- Excelent (36-40p): Multi-hop routing, servicii multiple, load balancing
+- Bine (28-35p): Topologie cu router, cel puțin 2 servicii
+- Acceptabil (20-27p): Topologie simplă, 1 serviciu funcțional
+- Insuficient (<20p): Doar ping între hosturi
+- Visual: Scala gradată cu exemple
+
+SLIDE 8: Funcționalitate (30p)
+- Excelent (27-30p): Tot funcționează, demo fluid, interpretare captură
+- Bine (21-26p): Funcționalitate principală OK, mici probleme
+- Acceptabil (15-20p): Demo parțial funcțional, necesită intervenții
+- Insuficient (<15p): Demo eșuează, nu poate explica rezultatele
+- Visual: Scala gradată
+
+SLIDE 9: Prezentare (20p)
+- Excelent (18-20p): Clar, structurat, răspunde întrebărilor cu încredere
+- Bine (14-17p): Prezentare bună, unele ezitări la întrebări
+- Acceptabil (10-13p): Dezorganizat, dar conținut corect
+- Insuficient (<10p): Nu poate explica propria soluție
+- Visual: Scala gradată
+
+SLIDE 10: Documentație (10p)
+- Excelent (9-10p): README complet, diagrame clare, cod comentat
+- Bine (7-8p): Documentație adecvată, lipsesc detalii minore
+- Acceptabil (5-6p): Documentație minimală
+- Insuficient (<5p): Lipsă documentație sau incorectă
+- Visual: Scala gradată
+
+================================================================================
+SECȚIUNEA D: ÎNTREBĂRILE DE APĂRARE (10 min, 5 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 11: Tipuri de întrebări - Prezentare
+- Întrebări de înțelegere (Ce face acest segment de cod?)
+- Întrebări de aplicare (Ce s-ar întâmpla dacă...?)
+- Întrebări de analiză (De ce ai ales această abordare?)
+- Întrebări de evaluare (Care sunt limitările?)
+- Visual: Icoane diferențiate per tip
+
+SLIDE 12: Exemple - Întrebări de înțelegere
+- "Explică linia X din codul tău."
+- "Ce protocol folosește serviciul tău și de ce?"
+- "Cum ajunge pachetul de la h1 la h3?"
+- "Ce reprezintă această intrare în tabela de rutare?"
+- Sfat: Cunoaște-ți codul linie cu linie
+
+SLIDE 13: Exemple - Întrebări de aplicare
+- "Dacă adaug un al patrulea host, ce modificări fac?"
+- "Cum aș testa că load balancer-ul distribuie corect?"
+- "Ce comandă folosesc pentru a vedea traficul HTTP?"
+- "Cum verific că serviciul ascultă pe portul X?"
+- Sfat: Gândește scenarii alternative
+
+SLIDE 14: Exemple - Întrebări de analiză
+- "De ce TCP și nu UDP pentru serviciul tău?"
+- "Ce avantaje și dezavantaje are topologia ta?"
+- "Cum ai depana dacă clientul nu primește răspuns?"
+- "Ce indică acest pattern în captură?"
+- Sfat: Pregătește justificări pentru decizii
+
+SLIDE 15: Exemple - Întrebări de evaluare
+- "Care e cea mai mare limitare a soluției tale?"
+- "Ce ai îmbunătăți dacă ai mai mult timp?"
+- "Cum s-ar comporta sistemul la 100 de clienți?"
+- "Ce ar trebui adăugat pentru producție?"
+- Sfat: Fii sincer despre limitări - e apreciat
+
+================================================================================
+SECȚIUNEA E: TROUBLESHOOTING RAPID (8 min, 4 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 16: Probleme frecvente la demo
+- Mininet nu pornește: verifică procese anterioare (`sudo mn -c`)
+- Port ocupat: identifică și oprește procesul (`lsof -i :PORT`)
+- Serviciul nu răspunde: verifică IP corect, firewall
+- Captură goală: verifică interfața corectă
+- Visual: Tabel problemă → soluție
+
+SLIDE 17: Comenzi de salvare
+- `sudo mn -c` - curăță Mininet
+- `pkill -f python` - oprește scripturi Python
+- `ip link show` - verifică interfețe
+- `ss -tlnp` - verifică porturi
+- `tcpdump -i any -c 10` - test rapid captură
+
+SLIDE 18: Dacă demo-ul eșuează
+- NU intra în panică
+- Explică ce AR FI TREBUIT să se întâmple
+- Arată captura pre-înregistrată (backup)
+- Discută unde crezi că e problema
+- Evaluatorul apreciază capacitatea de diagnostic
+
+SLIDE 19: Checklist final înainte de prezentare
+□ VM pornită și Mininet curat
+□ Cod actualizat și testat
+□ Backup captură pregătit
+□ Diagrama printată/vizibilă
+□ Cronometru pentru timing
+□ Apă pentru prezentator
+- Visual: Checklist interactiv
+
+================================================================================
+SECȚIUNEA F: ORDINEA PREZENTĂRILOR (5 min, 2 slide-uri)
+--------------------------------------------------------------------------------
+
+SLIDE 20: Timeline sesiune
+- [Completat de instructor cu echipele]
+- Format: Echipa X - HH:MM - HH:MM
+- Pauză la jumătate (5-10 min)
+- Buffer pentru întârzieri
+- Visual: Gantt chart simplificat
+
+SLIDE 21: Reguli de sală
+- Echipa următoare pregătită (VM pornită)
+- Respectă timpul alocat
+- Întrebările: doar în timpul Q&A
+- Feedback constructiv încurajat
+- Visual: Iconuri reguli
+
+================================================================================
+SECȚIUNEA G: ÎNCHIDERE (2 min, 1 slide)
+--------------------------------------------------------------------------------
+
+SLIDE 22: Succes!
+- Aveți încredere în munca voastră
+- Cereți clarificări dacă nu înțelegeți întrebarea
+- Demonstrați că ÎNȚELEGEȚI, nu doar că ați copiat
+- Mesaj: "Mult succes la prezentări!"
+- Visual: Thumbs up / celebration icon
+
+================================================================================
+TIMING TOTAL: ~45 min prezentare instructori
+SLIDE-URI TOTALE: 22
+
+RESTUL TIMPULUI: Prezentări echipe (~8-10 min/echipă × nr. echipe)
+
+NOTE PENTRU INSTRUCTOR:
+- Slide-urile 7-10: poate fi folosit ca fișă printată
+- Slide-ul 20: completează cu echipele din grupă
+- Păstrează flexibilitate la timing pentru întrebări
+- Notează punctajul în timp real sau imediat după
+================================================================================
