@@ -1,0 +1,205 @@
+# =============================================================================
+# Docker Compose — Săptămâna 12: Protocoale Email și RPC
+# =============================================================================
+# Orchestrează multiple servicii pentru demo-uri și laborator
+#
+# Utilizare:
+#   docker-compose up -d          # Pornire toate serviciile
+#   docker-compose logs -f        # Vizualizare loguri
+#   docker-compose down           # Oprire și cleanup
+#   docker-compose ps             # Status servicii
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # SMTP Server Educațional
+  # ===========================================================================
+  smtp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s12-smtp
+    hostname: smtp-server
+    command: python src/email/smtp_server.py --host 0.0.0.0 --port 1025 --maildir /app/mailbox
+    ports:
+      - "1025:1025"
+    volumes:
+      - smtp-mailbox:/app/mailbox
+      - smtp-logs:/app/logs
+    networks:
+      - email-rpc-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost',1025)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "app.service=email"
+      - "app.protocol=smtp"
+
+  # ===========================================================================
+  # JSON-RPC Server
+  # ===========================================================================
+  jsonrpc-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s12-jsonrpc
+    hostname: jsonrpc-server
+    command: python src/rpc/jsonrpc/jsonrpc_server.py --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - rpc-logs:/app/logs
+    networks:
+      - email-rpc-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-X", "POST", "-H", "Content-Type: application/json", "-d", '{"jsonrpc":"2.0","method":"echo","params":["test"],"id":1}', "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "app.service=rpc"
+      - "app.protocol=jsonrpc"
+
+  # ===========================================================================
+  # XML-RPC Server
+  # ===========================================================================
+  xmlrpc-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s12-xmlrpc
+    hostname: xmlrpc-server
+    command: python src/rpc/xmlrpc/xmlrpc_server.py --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    volumes:
+      - rpc-logs:/app/logs
+    networks:
+      - email-rpc-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import xmlrpc.client; c=xmlrpc.client.ServerProxy('http://localhost:8001'); c.system.listMethods()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "app.service=rpc"
+      - "app.protocol=xmlrpc"
+
+  # ===========================================================================
+  # Client/Workstation (pentru exerciții interactive)
+  # ===========================================================================
+  workstation:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s12-workstation
+    hostname: workstation
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    volumes:
+      - ../exercises:/app/exercises:rw
+      - ../pcap:/app/pcap:rw
+      - workstation-data:/app/data
+    networks:
+      - email-rpc-net
+    depends_on:
+      - smtp-server
+      - jsonrpc-server
+      - xmlrpc-server
+    environment:
+      - SMTP_HOST=smtp-server
+      - SMTP_PORT=1025
+      - JSONRPC_HOST=jsonrpc-server
+      - JSONRPC_PORT=8000
+      - XMLRPC_HOST=xmlrpc-server
+      - XMLRPC_PORT=8001
+    labels:
+      - "app.service=client"
+      - "app.role=workstation"
+
+  # ===========================================================================
+  # Wireshark/TShark pentru captură trafic
+  # ===========================================================================
+  traffic-capture:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s12-capture
+    hostname: capture
+    command: >
+      bash -c "
+        echo 'Traffic capture ready. Use: tshark -i any -w /app/pcap/capture.pcap'
+        tail -f /dev/null
+      "
+    volumes:
+      - ../pcap:/app/pcap:rw
+    networks:
+      - email-rpc-net
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    labels:
+      - "app.service=monitoring"
+      - "app.role=capture"
+
+# =============================================================================
+# Rețea
+# =============================================================================
+networks:
+  email-rpc-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
+
+# =============================================================================
+# Volume persistente
+# =============================================================================
+volumes:
+  smtp-mailbox:
+    name: s12-smtp-mailbox
+  smtp-logs:
+    name: s12-smtp-logs
+  rpc-logs:
+    name: s12-rpc-logs
+  workstation-data:
+    name: s12-workstation-data
+
+# =============================================================================
+# Utilizare avansată:
+#
+# 1. Pornire doar servere:
+#    docker-compose up -d smtp-server jsonrpc-server xmlrpc-server
+#
+# 2. Accesare workstation pentru exerciții:
+#    docker-compose exec workstation bash
+#
+# 3. Trimitere email din workstation:
+#    docker-compose exec workstation python src/email/smtp_client.py \
+#      --server smtp-server --port 1025 \
+#      --from test@local --to dest@local \
+#      --subject "Test" --body "Hello"
+#
+# 4. Apel JSON-RPC din workstation:
+#    docker-compose exec workstation python src/rpc/jsonrpc/jsonrpc_client.py \
+#      --server jsonrpc-server --port 8000 \
+#      --method add --params 5 3
+#
+# 5. Captură trafic pe rețea:
+#    docker-compose exec traffic-capture tshark -i any -f "tcp port 1025 or tcp port 8000" -w /app/pcap/session.pcap
+#
+# 6. Vizualizare loguri în timp real:
+#    docker-compose logs -f smtp-server jsonrpc-server
+#
+# 7. Scalare (ex: mai mulți clienți):
+#    docker-compose up -d --scale workstation=3
+# =============================================================================

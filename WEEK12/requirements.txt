@@ -1,0 +1,21 @@
+# =============================================================================
+# requirements.txt - StarterKit Săptămâna 12
+# =============================================================================
+
+# Core (toate sunt în biblioteca standard, listate pentru claritate)
+# smtplib, email, xmlrpc, json, http.server - incluse în Python 3.10+
+
+# DNS resolution (optional, for MX lookups)
+dnspython>=2.4.0
+
+# Opțional: gRPC
+grpcio>=1.50.0
+grpcio-tools>=1.50.0
+protobuf>=4.21.0
+
+# Testing
+pytest>=7.0.0
+pytest-timeout>=2.0.0
+
+# Utilități
+colorama>=0.4.6

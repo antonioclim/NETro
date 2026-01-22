@@ -1,0 +1,47 @@
+SEMINAR 13 — Securitate în Rețele: Practică
+Outline pentru PowerPoint/reveal.js (15 slide-uri)
+
+SLIDE 1: Pagină de titlu
+- Seminar 13: Scanare și Testare Securitate
+
+SLIDE 2: Obiective practice
+- 6 competențe hands-on
+
+SLIDE 3: Topologia laboratorului
+- Diagrama Docker network
+
+SLIDE 4: Setup mediu
+- Comenzi make setup, docker-up
+
+SLIDE 5: Port Scanner - Teorie
+- TCP handshake, interpretare rezultate
+
+SLIDE 6: Port Scanner - Cod
+- Snippet Python cu ThreadPoolExecutor
+
+SLIDE 7: MQTT - Arhitectura
+- Broker, publisher, subscriber
+
+SLIDE 8: MQTT - Demo
+- Comenzi mosquitto_pub/sub
+
+SLIDE 9: Wireshark/tshark
+- Filtre MQTT, captură
+
+SLIDE 10: TLS Verification
+- openssl s_client
+
+SLIDE 11: Exploit Demo (CVE-2011-2523)
+- AVERTISMENT, explicație, remediere
+
+SLIDE 12: Mininet Topology
+- Comenzi CLI
+
+SLIDE 13: Exerciții
+- 6 exerciții gradate
+
+SLIDE 14: Livrabile
+- Ce trebuie predat
+
+SLIDE 15: Cleanup și Q&A
+- make clean, întrebări
