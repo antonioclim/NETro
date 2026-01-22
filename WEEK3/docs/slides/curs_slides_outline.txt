@@ -1,0 +1,460 @@
+=============================================================================
+                    CURS 3: INTRODUCERE ÎN PROGRAMAREA DE REȚEA
+                              Outline pentru Slide-uri
+                          (Import în PowerPoint / reveal.js)
+=============================================================================
+
+Disciplină: Rețele de Calculatoare
+Program: Informatică Economică, An 3, Semestrul 2
+Instituție: ASE București - CSIE
+
+-----------------------------------------------------------------------------
+SLIDE 1 - Titlu
+-----------------------------------------------------------------------------
+Titlu: Introducere în Programarea de Rețea
+Subtitlu: Socket programming: TCP, UDP, broadcast, multicast, TCP tunnel
+Autor: [Numele cadrului didactic]
+Data: Săptămâna 3
+
+-----------------------------------------------------------------------------
+SLIDE 2 - Agenda
+-----------------------------------------------------------------------------
+Titlu: Ce vom parcurge astăzi
+
+1. Socket-uri: fundamentele
+2. API-ul Socket Berkeley
+3. TCP: caracteristici și probleme
+4. UDP: datagrame și comunicare de grup
+5. Broadcast și Multicast
+6. TCP Tunnel
+7. RAW sockets și Scapy (introducere)
+
+Durată: 2 ore (cu pauză de 10 min)
+
+-----------------------------------------------------------------------------
+SLIDE 3 - Obiective de învățare
+-----------------------------------------------------------------------------
+Titlu: La finalul acestui curs veți putea...
+
+• Explica diferențele HTTP vs socket programming
+• Utiliza API-ul socket Python pentru TCP și UDP
+• Identifica problemele clasice: framing, concurență, blocking
+• Înțelege mecanismele broadcast și multicast
+• Construi un TCP tunnel funcțional
+
+-----------------------------------------------------------------------------
+SLIDE 4 - De ce contează?
+-----------------------------------------------------------------------------
+Titlu: De ce contează programarea de rețea?
+
+Stratul de bază pentru:
+• Aplicații web (HTTP peste TCP)
+• Sisteme de mesagerie (RabbitMQ, Kafka)
+• Jocuri multiplayer (UDP pentru latență)
+• IoT (MQTT, CoAP)
+
+Ce vă permite:
+• Diagnostic probleme conectivitate
+• Proiectare protocoale custom
+• Înțelegere framework-uri
+
+[Imagine sugestivă: stack de protocoale]
+
+-----------------------------------------------------------------------------
+SLIDE 5 - Recapitulare rapidă
+-----------------------------------------------------------------------------
+Titlu: Ce știm deja (S1-S2)
+
+| Concept | Definiție |
+|---------|-----------|
+| Socket  | Endpoint: (IP, Port, Protocol) |
+| TCP     | Orientat conexiune, livrare în ordine |
+| UDP     | Fără conexiune, datagrame independente |
+| Port    | Identificator 0-65535 |
+
+Întrebare: Ce protocol garantează ordinea? TCP sau UDP?
+
+-----------------------------------------------------------------------------
+SLIDE 6 - Ce este un Socket?
+-----------------------------------------------------------------------------
+Titlu: Socket = "Capăt de tub"
+
+[Proces A] ←→ [Socket A] ←—rețea—→ [Socket B] ←→ [Proces B]
+
+Trei elemente definitorii:
+1. Adresa IP - identifică host-ul
+2. Portul - identifică aplicația  
+3. Protocolul - TCP, UDP, RAW
+
+Analogie: Socket = Priză de telefon
+         Port = Număr interior
+
+-----------------------------------------------------------------------------
+SLIDE 7 - Socket API Origins
+-----------------------------------------------------------------------------
+Titlu: Berkeley Sockets (1983)
+
+• Introdus în BSD Unix 4.2
+• Adoptat universal (POSIX.1)
+• Python: modulul `socket`
+
+Principiu: "Everything is a file descriptor"
+
+Socket = file descriptor special pentru rețea
+
+-----------------------------------------------------------------------------
+SLIDE 8 - API Socket: Funcții principale
+-----------------------------------------------------------------------------
+Titlu: API-ul Socket Berkeley
+
+| Funcție | Rol |
+|---------|-----|
+| socket() | Creează socket nou |
+| bind() | Asociază cu adresă locală |
+| listen() | Marchează ca server (TCP) |
+| accept() | Acceptă conexiune (TCP) |
+| connect() | Inițiază conexiune (TCP) |
+| send()/recv() | Trimite/primește (TCP) |
+| sendto()/recvfrom() | Datagrame (UDP) |
+| close() | Închide și eliberează |
+
+-----------------------------------------------------------------------------
+SLIDE 9 - TCP: Avantaje
+-----------------------------------------------------------------------------
+Titlu: TCP - Transmission Control Protocol
+
+✓ Livrare garantată
+✓ Ordine păstrată
+✓ Flow control (receptor nu e copleșit)
+✓ Congestion control (adaptare la rețea)
+
+Cost: Overhead de setup (3-way handshake)
+      Overhead per-packet (ACK, retransmit)
+
+Când folosim: Când datele TREBUIE să ajungă corecte
+
+-----------------------------------------------------------------------------
+SLIDE 10 - TCP: Problema Framing
+-----------------------------------------------------------------------------
+Titlu: TCP Framing Problem
+
+TCP = byte stream, NU mesaje!
+
+send("Hello") + send("World") 
+         ↓
+recv() poate returna: "HelloWorld" sau "Hel" + "loWorld"
+
+SOLUȚII:
+1. Delimitator: mesaje terminate cu \n sau \0
+2. Length-prefix: primii N bytes = lungime
+3. Format fix: toate mesajele au aceeași dimensiune
+
+[Diagramă: stream vs messages]
+
+-----------------------------------------------------------------------------
+SLIDE 11 - TCP: Exemplu Echo Server
+-----------------------------------------------------------------------------
+Titlu: Echo Server Minimal (Python)
+
+```python
+import socket
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', 5000))
+server.listen(1)
+print("Server listening on port 5000")
+conn, addr = server.accept()
+print(f"Connected: {addr}")
+while data := conn.recv(1024):
+    conn.sendall(data)  # Echo back
+conn.close()
+```
+
+Demo: Rulare + test cu netcat
+
+-----------------------------------------------------------------------------
+SLIDE 12 - TCP: Concurență
+-----------------------------------------------------------------------------
+Titlu: Cum servim mai mulți clienți?
+
+Problema: accept() și recv() sunt BLOCKING
+
+Soluții:
+1. Threading - un thread per client
+   + Simplu de implementat
+   - Overhead mare, GIL în Python
+
+2. Multiprocessing - un proces per client
+   + Izolare completă
+   - Și mai mult overhead
+
+3. I/O Multiplexing - select/poll/epoll
+   + Eficient
+   - Complex de programat
+
+4. Async I/O - asyncio
+   + Modern, scalabil
+   - Paradigmă diferită
+
+-----------------------------------------------------------------------------
+SLIDE 13 - UDP: Caracteristici
+-----------------------------------------------------------------------------
+Titlu: UDP - User Datagram Protocol
+
+• Connectionless - fără handshake
+• Best-effort - pierdere posibilă
+• Header mic - doar 8 bytes
+• Suportă broadcast și multicast
+
+Când folosim:
+• Latență critică (gaming, streaming)
+• Loss tolerabil (video, VoIP)
+• Comunicare de grup
+
+[Comparație header: TCP (20B min) vs UDP (8B)]
+
+-----------------------------------------------------------------------------
+SLIDE 14 - UDP vs TCP: Tabel comparativ
+-----------------------------------------------------------------------------
+Titlu: TCP vs UDP - Când folosim ce?
+
+| Aspect | TCP | UDP |
+|--------|-----|-----|
+| Conexiune | Da | Nu |
+| Ordine | Garantată | Nu |
+| Livrare | Garantată | Best-effort |
+| Overhead | Mare | Mic |
+| Broadcast | Nu | Da |
+| Multicast | Nu | Da |
+| Cazuri de uz | Web, Email, File | Gaming, DNS, Streaming |
+
+-----------------------------------------------------------------------------
+SLIDE 15 - Broadcast UDP
+-----------------------------------------------------------------------------
+Titlu: Broadcast - One-to-All în LAN
+
+Ce este: Trimite la TOATE host-urile din subrețea
+
+Adresa: 255.255.255.255 sau network broadcast (10.0.0.255)
+
+OBLIGATORIU pe sender:
+```python
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+```
+
+Fără această linie → Permission denied
+
+Limitare: NU traversează routere
+
+-----------------------------------------------------------------------------
+SLIDE 16 - Broadcast: Exemplu cod
+-----------------------------------------------------------------------------
+Titlu: Broadcast - Sender și Receiver
+
+SENDER:
+```python
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+sock.sendto(b"Hello LAN!", ("255.255.255.255", 5007))
+```
+
+RECEIVER:
+```python
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(("0.0.0.0", 5007))  # Ascultă pe toate interfețele
+data, addr = sock.recvfrom(1024)
+print(f"Received from {addr}: {data}")
+```
+
+[Diagrama: h1 trimite, h2+h3 primesc]
+
+-----------------------------------------------------------------------------
+SLIDE 17 - Aplicații Broadcast
+-----------------------------------------------------------------------------
+Titlu: Unde se folosește Broadcast?
+
+• ARP - Address Resolution Protocol
+  IP → MAC address
+
+• DHCP Discovery - 
+  Client: "Cine îmi dă un IP?"
+  Server: "Eu! Ia acest IP."
+
+• Service Discovery -
+  "Există printere în rețea?"
+
+• Wake-on-LAN -
+  Magic packet pentru pornire PC
+
+-----------------------------------------------------------------------------
+SLIDE 18 - Multicast UDP
+-----------------------------------------------------------------------------
+Titlu: Multicast - One-to-Many cu Abonament
+
+Ce este: Trimite doar la host-urile ABONATE la grup
+
+Adrese multicast: 224.0.0.0 - 239.255.255.255
+
+Protocol de management: IGMP (Internet Group Management Protocol)
+
+Avantaj: Eficient pentru streaming
+         1 pachet → N receivers (nu N copii)
+
+[Diagrama: sender trimite 1x, doar subscribers primesc]
+
+-----------------------------------------------------------------------------
+SLIDE 19 - Multicast: JOIN și LEAVE
+-----------------------------------------------------------------------------
+Titlu: Multicast - Cum se abonează un receiver?
+
+JOIN (receiver trebuie să facă asta!):
+```python
+import struct
+GROUP = "224.0.0.100"
+mreq = socket.inet_aton(GROUP) + struct.pack("=I", socket.INADDR_ANY)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+```
+
+Sender:
+```python
+sock.sendto(b"Event!", (GROUP, 5007))
+# Nu e nevoie de opțiuni speciale
+```
+
+IGMP: Switch-urile pot face "snooping" pentru a optimiza
+
+-----------------------------------------------------------------------------
+SLIDE 20 - Broadcast vs Multicast
+-----------------------------------------------------------------------------
+Titlu: Broadcast vs Multicast - Comparație
+
+| Aspect | Broadcast | Multicast |
+|--------|-----------|-----------|
+| Destinație | Toți din LAN | Doar abonații |
+| Traversare router | NU | DA (cu PIM) |
+| Eficiență | Scăzută | Ridicată |
+| Control | Nici unul | IGMP join/leave |
+| Adresă | 255.255.255.255 | 224.x.x.x - 239.x.x.x |
+| Cazuri | Discovery, ARP | Streaming, Stock quotes |
+
+Quiz: Pentru un video streaming către 1000 clienți, ce alegem?
+
+-----------------------------------------------------------------------------
+SLIDE 21 - TCP Tunnel
+-----------------------------------------------------------------------------
+Titlu: TCP Tunnel - Intermediar de conexiuni
+
+Ce este: Acceptă conexiuni și le redirecționează
+
+[Client] → [Tunnel:8080] → [Target:80]
+
+Aplicații:
+• Proxy servers
+• VPN (partial)
+• Port forwarding
+• Debugging trafic
+
+SSH -L: Exact acest pattern!
+ssh -L 8080:webserver:80 jump-host
+
+-----------------------------------------------------------------------------
+SLIDE 22 - TCP Tunnel: Implementare
+-----------------------------------------------------------------------------
+Titlu: TCP Tunnel - Cod minimal
+
+```python
+def forward(src, dst):
+    """Copiază bytes de la src la dst"""
+    while data := src.recv(4096):
+        dst.sendall(data)
+
+# Acceptă client
+client, _ = tunnel.accept()
+# Conectează la target
+target = socket.socket()
+target.connect((TARGET_HOST, TARGET_PORT))
+
+# Două thread-uri pentru bidirecțional
+threading.Thread(target=forward, args=(client, target)).start()
+threading.Thread(target=forward, args=(target, client)).start()
+```
+
+DE CE două thread-uri? → Comunicare simultană în ambele direcții
+
+-----------------------------------------------------------------------------
+SLIDE 23 - RAW Sockets (Introducere)
+-----------------------------------------------------------------------------
+Titlu: RAW Sockets - Acces la nivel IP
+
+Ce permit:
+• Construire pachete de la zero
+• Acces la header-e (IP, TCP, UDP)
+• Implementare protocoale custom
+
+Cazuri de uz:
+• Ping (ICMP)
+• Packet sniffing
+• Penetration testing
+
+ATENȚIE: Necesită privilegii root/admin
+
+```python
+sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+```
+
+-----------------------------------------------------------------------------
+SLIDE 24 - Scapy: Puterea RAW simplificată
+-----------------------------------------------------------------------------
+Titlu: Scapy - Packet Manipulation în Python
+
+```python
+from scapy.all import *
+
+# Construiește și trimite ICMP echo
+pkt = IP(dst="8.8.8.8")/ICMP()
+reply = sr1(pkt, timeout=2)
+print(f"RTT: {reply.time - pkt.sent_time:.3f}s")
+
+# Sniff trafic
+sniff(filter="tcp port 80", count=10, prn=lambda x: x.summary())
+```
+
+Foarte puternic pentru:
+• Network debugging
+• Security testing
+• Protocol development
+
+-----------------------------------------------------------------------------
+SLIDE 25 - Recapitulare și Quiz
+-----------------------------------------------------------------------------
+Titlu: Ce am învățat astăzi
+
+✓ Socket = endpoint (IP, Port, Protocol)
+✓ TCP: conexiune, ordine, overhead
+✓ UDP: datagrame, rapid, no guarantees
+✓ Broadcast: one-to-all în LAN, SO_BROADCAST
+✓ Multicast: one-to-subscribers, IGMP JOIN
+✓ TCP Tunnel: intermediar bidirecțional
+
+QUIZ RAPID:
+1. Ce opțiune trebuie pe sender pentru broadcast?
+2. Ce face IP_ADD_MEMBERSHIP?
+3. De ce tunnel-ul are nevoie de 2 thread-uri?
+
+Următorul seminar: Hands-on cu toate conceptele!
+
+=============================================================================
+                              SFÂRȘIT OUTLINE CURS
+=============================================================================
+
+Note pentru cadru didactic:
+- Slide-urile 10-12 (TCP) pot fi comprimate dacă timpul e limitat
+- Demo live recomandat pe slide-urile 11, 16, 22
+- Quiz-urile interactive sporesc atenția (slide 5, 14, 20, 25)
+- Dacă studenții sunt mai avansați, extindeți slide-urile 23-24 (RAW, Scapy)
+
+Resurse suplimentare pentru import:
+- theory.html conține toate aceste concepte în format interactiv
+- Diagrame SVG disponibile în /docs/assets/
+
+Revolvix&Hypotheticalandrei

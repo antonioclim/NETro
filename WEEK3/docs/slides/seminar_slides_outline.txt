@@ -1,0 +1,549 @@
+=============================================================================
+                   SEMINAR 3: PROGRAMARE PE SOCKET-URI
+                        Outline pentru Slide-uri
+                     (Import în PowerPoint / reveal.js)
+=============================================================================
+
+Disciplină: Rețele de Calculatoare
+Program: Informatică Economică, An 3, Semestrul 2
+Instituție: ASE București - CSIE
+Tip: Hands-on / Lab Practice
+
+-----------------------------------------------------------------------------
+SLIDE 1 - Titlu
+-----------------------------------------------------------------------------
+Titlu: Programare pe Socket-uri
+Subtitlu: Broadcast UDP | Multicast UDP | TCP Tunnel
+Laborator practic - Săptămâna 3
+Durată: 2 ore
+
+-----------------------------------------------------------------------------
+SLIDE 2 - Obiective practice
+-----------------------------------------------------------------------------
+Titlu: Ce vom face astăzi
+
+1. Setup mediu de lucru (Mininet)
+2. Experiment: UDP Broadcast
+3. Experiment: UDP Multicast
+4. Experiment: TCP Tunnel
+5. Capturare și analiză trafic
+6. Exerciții practice
+
+Toate comenzile sunt în: seminar.html, lab.html
+
+-----------------------------------------------------------------------------
+SLIDE 3 - Pregătire mediu
+-----------------------------------------------------------------------------
+Titlu: Verificare setup
+
+Pas 1: Deschideți terminalul în VM
+
+Pas 2: Navigați la starterkit
+```bash
+cd S3_Starterkit_Final
+```
+
+Pas 3: Verificați mediul
+```bash
+make verify
+```
+
+Output așteptat: Toate check-urile VERZI
+- Python: OK
+- Mininet: OK  
+- Dependencies: OK
+
+Probleme? → make setup
+
+-----------------------------------------------------------------------------
+SLIDE 4 - Topologie Mininet
+-----------------------------------------------------------------------------
+Titlu: Topologia de bază
+
+```
+     10.0.0.1      10.0.0.2      10.0.0.3
+        h1 ─────┬───── h2 ─────┬───── h3
+                │              │
+                └──── s1 ──────┘
+                   (switch)
+```
+
+Pornire:
+```bash
+sudo python3 mininet/topo_base.py
+```
+
+Verificare:
+```
+mininet> pingall
+*** Results: 0% dropped
+```
+
+-----------------------------------------------------------------------------
+SLIDE 5 - Experiment 1: Broadcast Setup
+-----------------------------------------------------------------------------
+Titlu: Broadcast UDP - Pregătire
+
+Obiectiv: h1 trimite mesaj → h2 ȘI h3 primesc
+
+Pas 1: Pornire receivers pe h2 și h3
+```
+mininet> h2 python3 python/examples/ex01_udp_broadcast.py --mode receiver &
+mininet> h3 python3 python/examples/ex01_udp_broadcast.py --mode receiver &
+```
+
+Pas 2: Verificare că ascultă
+```
+mininet> h2 ps aux | grep python
+```
+
+Output așteptat: "Receiver listening on 0.0.0.0:5007"
+
+-----------------------------------------------------------------------------
+SLIDE 6 - Experiment 1: Broadcast Send
+-----------------------------------------------------------------------------
+Titlu: Broadcast UDP - Trimitere
+
+Pas 3: Trimite broadcast de pe h1
+```
+mininet> h1 python3 python/examples/ex01_udp_broadcast.py \
+    --mode sender --message "Hello LAN!"
+```
+
+Rezultat așteptat:
+- h2 afișează: Received: b'Hello LAN!' from ('10.0.0.1', ...)
+- h3 afișează: Received: b'Hello LAN!' from ('10.0.0.1', ...)
+
+AMBII receivers primesc mesajul!
+
+Întrebare: Ce s-ar întâmpla fără SO_BROADCAST?
+
+-----------------------------------------------------------------------------
+SLIDE 7 - Broadcast: Codul cheie
+-----------------------------------------------------------------------------
+Titlu: Ce face codul? (ex01_udp_broadcast.py)
+
+SENDER - liniile critice:
+```python
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # CRUCIAL!
+sock.sendto(message.encode(), ('255.255.255.255', PORT))
+```
+
+RECEIVER:
+```python
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('0.0.0.0', PORT))  # Ascultă pe toate interfețele
+while True:
+    data, addr = sock.recvfrom(1024)
+    print(f"Received: {data} from {addr}")
+```
+
+Quiz: De ce bind pe 0.0.0.0 și nu pe IP-ul specific?
+
+-----------------------------------------------------------------------------
+SLIDE 8 - Experiment 2: Multicast Setup
+-----------------------------------------------------------------------------
+Titlu: Multicast UDP - Pregătire
+
+Obiectiv: Doar receivers care fac JOIN primesc
+
+Grup multicast: 224.0.0.100
+
+Pas 1: h2 face JOIN
+```
+mininet> h2 python3 python/examples/ex02_udp_multicast.py --mode receiver &
+```
+
+Pas 2: h3 NU face join (sau rulează cu --no-join)
+```
+mininet> h3 python3 python/examples/ex02_udp_multicast.py \
+    --mode receiver --no-join &
+```
+
+-----------------------------------------------------------------------------
+SLIDE 9 - Experiment 2: Multicast Send
+-----------------------------------------------------------------------------
+Titlu: Multicast UDP - Trimitere
+
+Pas 3: Trimite pe grupul multicast de pe h1
+```
+mininet> h1 python3 python/examples/ex02_udp_multicast.py \
+    --mode sender --message "Multicast test"
+```
+
+Rezultat așteptat:
+- h2 (subscriber): Received: b'Multicast test'
+- h3 (non-subscriber): NIMIC, tăcere
+
+De ce? h3 nu a făcut IGMP JOIN pe grupul 224.0.0.100
+
+Verificare IGMP:
+```
+mininet> h1 tshark -i h1-eth0 -Y igmp -c 3
+```
+
+-----------------------------------------------------------------------------
+SLIDE 10 - Multicast: Codul cheie
+-----------------------------------------------------------------------------
+Titlu: Ce face JOIN-ul? (ex02_udp_multicast.py)
+
+RECEIVER cu JOIN:
+```python
+import struct
+GROUP = "224.0.0.100"
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind(('', PORT))
+
+# MAGIC: IP_ADD_MEMBERSHIP
+mreq = socket.inet_aton(GROUP) + struct.pack("=I", socket.INADDR_ANY)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+```
+
+struct mreq = multicast group IP (4 bytes) + interface (4 bytes)
+
+SENDER - simplu:
+```python
+sock.sendto(message.encode(), (GROUP, PORT))
+```
+
+-----------------------------------------------------------------------------
+SLIDE 11 - Broadcast vs Multicast: Vizualizare
+-----------------------------------------------------------------------------
+Titlu: Diferența vizuală
+
+BROADCAST:
+```
+h1 ──broadcast──> [s1] ──┬──> h2 ✓ primește
+                        └──> h3 ✓ primește
+```
+
+MULTICAST (h2 subscribed, h3 not):
+```
+h1 ──multicast──> [s1] ──┬──> h2 ✓ primește (JOINED)
+                        └──> h3 ✗ nu primește
+```
+
+Switch-ul IGMP-aware poate filtra traficul
+
+Întrebare: Care e mai eficient pentru 1000 receivers?
+
+-----------------------------------------------------------------------------
+SLIDE 12 - Experiment 3: TCP Tunnel Setup
+-----------------------------------------------------------------------------
+Titlu: TCP Tunnel - Pregătire
+
+Arhitectura:
+```
+[h1 client] → [h2 tunnel:8080] → [h3 server:80]
+```
+
+Pas 1: Server HTTP pe h3
+```
+mininet> h3 python3 -m http.server 80 --bind 10.0.0.3 &
+```
+
+Pas 2: Tunnel pe h2
+```
+mininet> h2 python3 python/examples/ex03_tcp_tunnel.py \
+    --listen-port 8080 \
+    --target-host 10.0.0.3 \
+    --target-port 80 &
+```
+
+Output: "Tunnel listening on 0.0.0.0:8080, forwarding to 10.0.0.3:80"
+
+-----------------------------------------------------------------------------
+SLIDE 13 - Experiment 3: TCP Tunnel Test
+-----------------------------------------------------------------------------
+Titlu: TCP Tunnel - Testare
+
+Pas 3: Client pe h1 accesează PRIN tunnel
+```
+mininet> h1 curl http://10.0.0.2:8080/
+```
+
+Rezultat așteptat: Directory listing de pe h3
+
+Ce s-a întâmplat:
+1. h1 → conectează la h2:8080 (tunnel)
+2. h2 → conectează la h3:80 (server)
+3. HTTP request: h1 → h2 → h3
+4. HTTP response: h3 → h2 → h1
+
+Întrebare: De ce are nevoie tunnel-ul de 2 thread-uri?
+
+-----------------------------------------------------------------------------
+SLIDE 14 - TCP Tunnel: Codul cheie
+-----------------------------------------------------------------------------
+Titlu: Forwarding bidirecțional
+
+```python
+def forward(src, dst, direction):
+    """Copiază bytes între socket-uri"""
+    while True:
+        data = src.recv(4096)
+        if not data:
+            break
+        dst.sendall(data)
+
+# Acceptă client
+client_sock, client_addr = tunnel_sock.accept()
+
+# Conectează la target
+target_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+target_sock.connect((TARGET_HOST, TARGET_PORT))
+
+# Două thread-uri: client→target și target→client
+threading.Thread(target=forward, args=(client_sock, target_sock, "→")).start()
+threading.Thread(target=forward, args=(target_sock, client_sock, "←")).start()
+```
+
+Analogie: Translator între două persoane
+
+-----------------------------------------------------------------------------
+SLIDE 15 - Capturare trafic: tcpdump
+-----------------------------------------------------------------------------
+Titlu: Capturare cu tcpdump
+
+Captură broadcast:
+```
+mininet> h1 tcpdump -i h1-eth0 -w /tmp/broadcast.pcap udp port 5007 &
+# Rulați experimentul broadcast
+# Apoi opriți captura: Ctrl+C sau kill
+```
+
+Captură multicast:
+```
+mininet> h2 tcpdump -i h2-eth0 -w /tmp/multicast.pcap \
+    'igmp or udp port 5007' &
+```
+
+Citire captură:
+```
+tcpdump -r /tmp/broadcast.pcap -n
+```
+
+-----------------------------------------------------------------------------
+SLIDE 16 - Capturare trafic: tshark
+-----------------------------------------------------------------------------
+Titlu: Analiză cu tshark
+
+Filtrare avansată:
+```bash
+# Doar IGMP
+tshark -i h2-eth0 -Y igmp
+
+# Doar UDP broadcast
+tshark -i h1-eth0 -Y "udp and eth.dst == ff:ff:ff:ff:ff:ff"
+
+# Doar multicast
+tshark -i h1-eth0 -Y "ip.dst >= 224.0.0.0 and ip.dst <= 239.255.255.255"
+
+# Export în JSON pentru procesare
+tshark -r capture.pcap -T json > packets.json
+```
+
+Decodare IGMP membership report:
+```
+tshark -r multicast.pcap -Y "igmp.type == 0x16" -V
+```
+
+-----------------------------------------------------------------------------
+SLIDE 17 - Debugging: Probleme comune
+-----------------------------------------------------------------------------
+Titlu: Troubleshooting rapid
+
+| Simptom | Cauză | Soluție |
+|---------|-------|---------|
+| Permission denied | Lipsă SO_BROADCAST | Adaugă setsockopt |
+| Address in use | Port ocupat | SO_REUSEADDR / kill proces |
+| Connection refused | Server oprit | Verifică listen/accept |
+| Multicast nu merge | Lipsă JOIN | IP_ADD_MEMBERSHIP |
+| RTNETLINK errors | Mininet murdar | sudo mn -c |
+
+Comenzi utile:
+```bash
+ss -tulpn | grep :5007    # Cine ascultă pe port
+ps aux | grep python       # Procese active
+sudo mn -c                 # Curăță Mininet
+```
+
+-----------------------------------------------------------------------------
+SLIDE 18 - Exercițiu 1: Echo UDP
+-----------------------------------------------------------------------------
+Titlu: Exercițiu 1 (⭐⭐)
+
+Implementați un server UDP care:
+- Primește un mesaj
+- Îl trimite înapoi UPPERCASE
+
+Template: python/templates/template_echo_udp.py
+
+Pași:
+1. Deschideți template-ul
+2. Completați funcția handle_client()
+3. Testați cu netcat:
+   ```
+   echo "hello" | nc -u localhost 5007
+   ```
+
+Rezultat așteptat: "HELLO"
+
+-----------------------------------------------------------------------------
+SLIDE 19 - Exercițiu 2: Broadcast Discovery
+-----------------------------------------------------------------------------
+Titlu: Exercițiu 2 (⭐⭐⭐)
+
+Implementați service discovery:
+- Serviciul trimite broadcast "ANNOUNCE:nume:port"
+- Alte servicii răspund cu endpoint-ul lor
+- Colectați într-un dicționar
+
+Template: python/templates/template_broadcast_discovery.py
+
+Cerințe:
+- Timeout 5 secunde pentru răspunsuri
+- Dicționar cu serviciile găsite
+
+-----------------------------------------------------------------------------
+SLIDE 20 - Exercițiu 3: Multicast Chat
+-----------------------------------------------------------------------------
+Titlu: Exercițiu 3 (⭐⭐⭐)
+
+Implementați chat pe multicast:
+- Toți participanții pe grupul 224.0.0.100
+- Fiecare are un nickname
+- Mesajele se văd la toți
+
+Template: python/templates/template_multicast_chat.py
+
+Cerințe:
+- Threading pentru send/receive simultan
+- Format: "[nickname] mesaj"
+
+Testare: 3 terminale în Mininet (h1, h2, h3)
+
+-----------------------------------------------------------------------------
+SLIDE 21 - Exercițiu 4: Tunnel Logging
+-----------------------------------------------------------------------------
+Titlu: Exercițiu 4 (⭐⭐⭐)
+
+Extindeți TCP tunnel pentru logging:
+- Log fiecare transfer în CSV
+- Coloane: timestamp, direcție, bytes
+
+Template: python/templates/template_tunnel_logging.py
+
+Exemplu output (tunnel.log):
+```
+2025-01-15T10:30:15,client→target,1024
+2025-01-15T10:30:15,target→client,4096
+2025-01-15T10:30:16,client→target,512
+```
+
+-----------------------------------------------------------------------------
+SLIDE 22 - Challenge: Load Balancer
+-----------------------------------------------------------------------------
+Titlu: Challenge (⭐⭐⭐⭐⭐) - Pentru acasă
+
+Implementați load balancer TCP:
+- Acceptă conexiuni pe un port
+- Distribuie către N backend servers (round-robin)
+- Health check periodic
+- Failover automat
+
+```
+[Client] → [LB:8080] → ┬─→ [Backend1:80]
+                       ├─→ [Backend2:80]
+                       └─→ [Backend3:80]
+```
+
+Indicii:
+- Lista backends configurabilă
+- Index circular pentru round-robin
+- Thread separat pentru health check
+
+-----------------------------------------------------------------------------
+SLIDE 23 - Validare și Cleanup
+-----------------------------------------------------------------------------
+Titlu: Finalizare sesiune
+
+Validare:
+```bash
+make test
+```
+
+Cleanup:
+```bash
+make clean
+# sau în Mininet:
+mininet> exit
+sudo mn -c
+```
+
+Verificare că totul e curat:
+```bash
+ps aux | grep mininet    # Nimic
+ss -tulpn | grep 500     # Nimic
+```
+
+-----------------------------------------------------------------------------
+SLIDE 24 - Ce să rețineți
+-----------------------------------------------------------------------------
+Titlu: Key Takeaways
+
+✓ Broadcast: SO_BROADCAST + 255.255.255.255
+  → Toți din LAN primesc
+
+✓ Multicast: IP_ADD_MEMBERSHIP + grup 224.x.x.x
+  → Doar subscribers primesc
+
+✓ TCP Tunnel: 2 thread-uri pentru bidirecțional
+  → Pattern pentru proxy/VPN
+
+✓ Debugging: tcpdump/tshark sunt prietenii voștri
+
+Săptămâna viitoare: Protocoale text și binare custom
+
+-----------------------------------------------------------------------------
+SLIDE 25 - Resurse
+-----------------------------------------------------------------------------
+Titlu: Pentru studiu individual
+
+Starterkit:
+- README.md - Quick start
+- python/examples/ - Cod complet
+- python/templates/ - Exerciții
+- docs/*.md - Documentație detaliată
+
+HTML interactiv:
+- theory.html - Teorie cu quiz-uri
+- seminar.html - Ghid pas cu pas
+- lab.html - Laborator cu checkpoints
+
+Bibliografie:
+- RFC 768 (UDP)
+- RFC 793 (TCP)
+- RFC 1112 (IGMP)
+
+Întrebări? → [email cadru didactic]
+
+=============================================================================
+                            SFÂRȘIT OUTLINE SEMINAR
+=============================================================================
+
+Note pentru cadru didactic:
+- Slide-urile 5-11 = demo-uri live, asigurați-vă că funcționează înainte
+- Pauză recomandată între slide 11 și 12 (10 minute)
+- Slide-urile 18-22 = exerciții, studenții lucrează individual
+- Challenge (slide 22) poate fi temă pentru acasă sau bonus
+- Timpul estimat: 2 ore (cu pauză)
+
+Resurse pentru import:
+- seminar.html conține tot materialul interactiv
+- Comenzile pot fi copiate direct din HTML
+
+Revolvix&Hypotheticalandrei
