@@ -1,0 +1,302 @@
+# ============================================================================
+# Seminar 6 - Slide Outline
+# SDN, Componente arhitecturi, Topologii simulate, Analiza traficului
+# ============================================================================
+# Acest fișier poate fi importat în PowerPoint/reveal.js pentru structurare
+# Format: [Slide N] Titlu | Note pentru prezentator
+# ============================================================================
+
+[Slide 1] Titlu: Seminar 6 - SDN și NAT în practică
+- Subtitlu: Topologii simulate, analiza traficului
+- Logo: ASE-CSIE
+- Autor: Revolvix&Hypotheticalandrei
+
+[Slide 2] Obiective seminar
+- Configurare și testare NAT în Mininet
+- Implementare controller SDN cu politici
+- Analiză trafic cu tcpdump/tshark
+- Debugging și troubleshooting
+| Durată: 100 minute
+
+[Slide 3] Agenda
+1. Setup mediu (10 min)
+2. Demo NAT/PAT (25 min)
+3. Captură și interpretare (15 min)
+4. Demo SDN (25 min)
+5. Modificare politici (15 min)
+6. Livrabile (10 min)
+| Note: Timpi aproximativi
+
+[Slide 4] Recapitulare rapidă: NAT
+- Traducere adrese private → publice
+- PAT: Diferențiere prin porturi
+- iptables: -t nat -A POSTROUTING -j MASQUERADE
+| Quiz: Ce se traduce în NAT?
+
+[Slide 5] Recapitulare rapidă: SDN
+- Control plane centralizat
+- Data plane în switch-uri
+- OpenFlow pentru comunicare
+- Flow tables: Match → Action
+| Quiz: Ce e table-miss?
+
+[Slide 6] Starterkit S6 - Structură
+- /seminar/mininet/topologies/ - topo_nat.py, topo_sdn.py
+- /seminar/python/apps/ - nat_observer.py, tcp_echo.py, udp_echo.py
+- /seminar/python/controllers/ - sdn_policy_controller.py
+- Makefile - automatizări
+| Demo: make check
+
+[Slide 7] Verificare mediu
+```bash
+make check
+```
+- Python 3.x ✓
+- Mininet ✓
+- OVS ✓
+- tcpdump/tshark ✓
+- os-ken ✓
+| Troubleshooting: make setup
+
+[Slide 8] Topologie NAT - Schema
+[ASCII diagram]
+h1 (10.0.1.101) ─┐
+                 ├── s1 ── rnat ── s2 ── h3 (192.168.1.103)
+h2 (10.0.1.102) ─┘         │
+                      MASQUERADE
+                    (192.168.1.1)
+| Diagramă interactivă în HTML
+
+[Slide 9] Pornire demo NAT
+```bash
+make nat-demo
+# sau
+sudo python3 seminar/mininet/topologies/topo_nat.py --cli
+```
+| Live demo pe proiector
+
+[Slide 10] Verificare configurație NAT
+```bash
+mininet> rnat iptables -t nat -L -n -v
+```
+- Chain POSTROUTING
+- Target: MASQUERADE
+- Source: 10.0.1.0/24
+| Ce înseamnă fiecare coloană?
+
+[Slide 11] Test conectivitate
+```bash
+mininet> h1 ping -c 3 192.168.1.103
+mininet> h2 ping -c 3 192.168.1.103
+```
+- TTL=63 (un hop prin router)
+- 0% packet loss = succes
+| Ce înseamnă TTL?
+
+[Slide 12] NAT Observer - Demonstrație PAT
+```bash
+# Pe h3 (server):
+h3 python3 nat_observer.py server --port 8080 &
+
+# De pe h1, h2 (clienți):
+h1 python3 nat_observer.py client --host 192.168.1.103 --port 8080
+h2 python3 nat_observer.py client --host 192.168.1.103 --port 8080
+```
+| Observați: același IP, porturi diferite
+
+[Slide 13] Interpretare output NAT Observer
+```
+[CONN] Client from 192.168.1.1:45231
+[CONN] Client from 192.168.1.1:45232
+[CONN] Client from 192.168.1.1:45233
+```
+- Toate conexiunile vin de la 192.168.1.1 (router NAT)
+- Porturi diferite = fluxuri diferite
+| Întrebare: De ce serverul nu vede 10.0.1.101?
+
+[Slide 14] Captură trafic - Pre-NAT vs Post-NAT
+```bash
+# Interfață internă (pre-NAT):
+rnat tcpdump -i rnat-eth0 -n icmp &
+
+# Interfață externă (post-NAT):
+rnat tcpdump -i rnat-eth1 -n icmp &
+```
+| Comparație în paralel
+
+[Slide 15] Conntrack - Tabela de traducere
+```bash
+mininet> rnat conntrack -L
+```
+- Arată mapările active
+- Original: IP intern → IP extern
+- Reply: IP extern → IP intern
+| Explicație câmpuri
+
+[Slide 16] Întrebare de control - NAT
+Q: Dacă h1 și h2 accesează simultan același server, cum le diferențiază serverul?
+A: Prin porturile sursă diferite alocate de NAT (PAT)
+| Discuție 2 minute
+
+[Slide 17] Topologie SDN - Schema
+[ASCII diagram]
+        ┌─────────────┐
+        │ Controller  │
+        │  (OS-Ken)   │
+        └──────┬──────┘
+               │ OpenFlow
+        ┌──────┴──────┐
+        │   Switch s1 │
+        └──────┬──────┘
+          /    │    \
+         h1   h2    h3
+| Diagramă cu politici
+
+[Slide 18] Politici SDN implementate
+- h1 ↔ h2: PERMIT
+- * → h3: DROP (implicit)
+- UDP → h3: Configurabil (ALLOW_UDP_TO_H3)
+| Cod în sdn_policy_controller.py
+
+[Slide 19] Pornire demo SDN
+```bash
+# Terminal 1 - Controller:
+make controller-start
+
+# Terminal 2 - Topologie:
+make sdn-demo
+```
+| Note: 2 terminale separate!
+
+[Slide 20] Test politici SDN
+```bash
+# Ar trebui să funcționeze:
+mininet> h1 ping -c 2 10.0.10.2
+
+# Ar trebui să eșueze:
+mininet> h1 ping -c 2 -W 2 10.0.10.3
+```
+| Observare: 0% loss vs 100% loss
+
+[Slide 21] Inspectare Flow Table
+```bash
+$ sudo ovs-ofctl dump-flows s1
+```
+- priority=0: table-miss → CONTROLLER
+- priority=10: h1↔h2 → output
+- priority=30: *→h3 → drop
+| Explicație priorități
+
+[Slide 22] Modificare politici - Exercițiu
+1. Deschide sdn_policy_controller.py
+2. Găsește: ALLOW_UDP_TO_H3 = False
+3. Schimbă în: ALLOW_UDP_TO_H3 = True
+4. Restart controller
+5. Testează cu UDP echo
+| Live coding
+
+[Slide 23] Test UDP după modificare
+```bash
+# Server pe h3:
+h3 python3 udp_echo.py server --port 9000 &
+
+# Client de pe h1:
+h1 python3 udp_echo.py client --host 10.0.10.3 --port 9000
+```
+| UDP funcționează, ICMP tot blocat
+
+[Slide 24] Debugging frecvent - NAT
+| Problemă | Cauză | Soluție |
+|----------|-------|---------|
+| Ping eșuează | IP forward off | sysctl net.ipv4.ip_forward=1 |
+| Traducere nu merge | Regulă lipsă | Check iptables -t nat -L |
+| ARP fails | Cache vechi | ip neigh flush all |
+| Tabel: probleme comune
+
+[Slide 25] Debugging frecvent - SDN
+| Problemă | Cauză | Soluție |
+|----------|-------|---------|
+| No controller | Port 6633 ocupat | pkill osken-manager |
+| Flows nu se instalează | OpenFlow version | ovs-vsctl show |
+| Primul ping lent | Table-miss normal | Așteptare flow install |
+| Tabel: probleme comune
+
+[Slide 26] Livrabile săptămâna 6
+1. nat_output.txt (30%)
+   - Ping outputs
+   - iptables dump
+   - NAT Observer log
+   - Interpretare (8+ rânduri)
+
+2. sdn_output.txt (40%)
+   - Teste ping
+   - Flow tables (before/after)
+   - Controller log
+   - Interpretare (10+ rânduri)
+| Checklist pe slide
+
+[Slide 27] Livrabile (continuare)
+3. reflectie.txt (20%)
+   - Cum afectează NAT end-to-end?
+   - Comparație iptables vs OpenFlow
+   - Tools pentru troubleshooting
+
+4. routing_output.txt (10% bonus)
+   - Traceroute experiments
+| Template în starterkit
+
+[Slide 28] Structură arhivă
+```
+livrabile_s6_[NumePrenume]/
+├── nat_output.txt
+├── sdn_output.txt
+├── reflectie.txt
+└── routing_output.txt (bonus)
+```
+| Format ZIP, predare pe platformă
+
+[Slide 29] Contribuție proiect echipă
+- Modul monitoring în /monitoring/:
+  - gateway_detector.py (ARP)
+  - connectivity_check.py (ICMP)
+  - nat_logger.py (opțional)
+- 10 puncte: 5p funcțional, 2p docs, 3p integrare
+| Deadline conform calendar
+
+[Slide 30] Întrebări frecvente
+Q: Pot folosi Docker în loc de VM?
+A: Da, dar cu --privileged și limitări
+
+Q: Ce fac dacă controller-ul nu pornește?
+A: pkill -9 osken-manager && make controller-start
+
+Q: Cum știu că NAT funcționează?
+A: Serverul vede IP-ul routerului, nu al clientului
+| FAQ
+
+[Slide 31] Resurse
+- Starterkit: [link GitHub/platformă]
+- Documentație OS-Ken: osrg.github.io/os-ken
+- OpenFlow Spec: opennetworking.org
+- Mininet: mininet.org
+| Bibliografie completă în docs/
+
+[Slide 32] Recap - Ce am făcut
+✓ Configurat NAT cu iptables în Mininet
+✓ Observat traducerea PAT cu NAT Observer
+✓ Capturat și comparat trafic pre/post NAT
+✓ Implementat politici SDN cu OS-Ken
+✓ Modificat politici și observat efectul
+| Checkbox vizual
+
+[Slide 33] Întrebări?
+- Office hours: [programare]
+- Email: [contact]
+- Forum: [link]
+| Mulțumesc pentru participare!
+
+# ============================================================================
+# NOTĂ: Acest outline conține 33 de slide-uri
+# Timpul estimat: 90-100 minute
+# Include demo-uri live și exerciții practice
+# ============================================================================

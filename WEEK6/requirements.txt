@@ -1,0 +1,33 @@
+# ============================================================================
+# requirements.txt - Dependențe Python pentru Săptămâna 6 (NAT/PAT & SDN)
+# Autor: Revolvix&Hypotheticalandrei
+# 
+# Instalare: pip3 install -r requirements.txt --break-system-packages
+# ============================================================================
+
+# SDN Controller (OS-Ken - fork modern al Ryu)
+os-ken>=2.4.0
+
+# Packet crafting și analiză
+scapy>=2.5.0
+
+# HTTP și networking
+requests>=2.28.0
+
+# Parsing argumente CLI
+argparse>=1.4.0
+
+# Utilități
+typing-extensions>=4.0.0
+
+# ============================================================================
+# NOTĂ: Mininet Python API vine cu instalarea Mininet din apt:
+#   sudo apt-get install mininet
+# 
+# Nu e disponibil pe PyPI și nu trebuie inclus aici.
+# ============================================================================
+
+# Pachete opționale pentru dezvoltare
+# pytest>=7.0.0          # Testing
+# black>=23.0.0          # Formatare cod
+# flake8>=6.0.0          # Linting

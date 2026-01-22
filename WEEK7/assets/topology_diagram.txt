@@ -1,0 +1,13 @@
+Diagrama topologiei — Săptămâna 7 (firewall ca router)
+
+h1 (10.0.7.11) ---- s1 ---- fw ---- s2 ---- h2 (10.0.7.12)
+
+- `fw` este un host configurat ca router (IP forwarding) și punct de aplicare a regulilor `iptables`
+- traficul dintre h1 și h2 trebuie să treacă prin `fw`, unde se aplică regulile de filtrare
+- pentru captură și analiză, folosește `tcpdump`/`tshark` pe interfețele relevante:
+  - pe h1/h2 (client/server)
+  - pe fw-eth0 și fw-eth1 (în tranzit)
+
+Scop:
+- să observi diferența dintre „trafic permis” și „trafic blocat” în aplicații și în pcap
+- să argumentezi regulile prin rezultate reproducibile (loguri, filtre, capturi)

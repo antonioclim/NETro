@@ -1,0 +1,80 @@
+# ============================================================================
+# docker-compose.yml - Orchestrare containere pentru Lab S6
+# Autor: Revolvix&Hypotheticalandrei
+#
+# NOTĂ: Această configurație este pentru scenarii specifice.
+# Metoda recomandată rămâne VirtualBox cu Ubuntu.
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # Mediu principal pentru laborator
+  lab-s6:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: lab-s6-networking:latest
+    container_name: lab-s6-main
+    privileged: true  # NECESAR pentru Mininet și namespace-uri rețea
+    stdin_open: true
+    tty: true
+    network_mode: "host"  # Acces complet la rețeaua host
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    volumes:
+      - ../pcap:/home/student/lab_s6/pcap
+      - ../logs:/home/student/lab_s6/logs
+      - /lib/modules:/lib/modules:ro
+    environment:
+      - TERM=xterm-256color
+    working_dir: /home/student/lab_s6
+    command: /bin/bash
+
+  # Container separat pentru controller SDN (opțional)
+  sdn-controller:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: lab-s6-networking:latest
+    container_name: sdn-controller
+    privileged: false
+    ports:
+      - "6633:6633"
+      - "6653:6653"
+    volumes:
+      - ../seminar/python/controllers:/app/controllers:ro
+      - ../logs:/app/logs
+    environment:
+      - TERM=xterm-256color
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Pornire controller SDN...'
+        osken-manager /app/controllers/sdn_policy_controller.py
+      "
+    profiles:
+      - controller  # Activat doar cu: docker-compose --profile controller up
+
+# ============================================================================
+# UTILIZARE:
+#
+# 1. Build imagini:
+#    docker-compose build
+#
+# 2. Pornire mediu principal (interactiv):
+#    docker-compose run --rm lab-s6
+#
+# 3. Pornire cu controller separat:
+#    docker-compose --profile controller up -d sdn-controller
+#    docker-compose run --rm lab-s6
+#
+# 4. Oprire și curățare:
+#    docker-compose down -v
+#
+# IMPORTANT:
+# - Necesită Docker cu suport pentru privileged containers
+# - Pe macOS/Windows, funcționalitatea Mininet va fi limitată
+# - Recomandat: Linux nativ sau VirtualBox
+# ============================================================================

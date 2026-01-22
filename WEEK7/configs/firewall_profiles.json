@@ -1,0 +1,49 @@
+{
+  "baseline": {
+    "description": "Permite forward și permite ICMP, TCP_APP_PORT și UDP_APP_PORT",
+    "forward_policy": "ACCEPT",
+    "rules": [
+      {
+        "chain": "FORWARD",
+        "proto": "icmp",
+        "action": "ACCEPT"
+      },
+      {
+        "chain": "FORWARD",
+        "proto": "tcp",
+        "dport": 9090,
+        "action": "ACCEPT"
+      },
+      {
+        "chain": "FORWARD",
+        "proto": "udp",
+        "dport": 9091,
+        "action": "ACCEPT"
+      }
+    ]
+  },
+  "block_tcp_9090": {
+    "description": "Respinge TCP pe portul 9090, lăsând UDP și ICMP neatinse",
+    "forward_policy": "ACCEPT",
+    "rules": [
+      {
+        "chain": "FORWARD",
+        "proto": "tcp",
+        "dport": 9090,
+        "action": "REJECT"
+      }
+    ]
+  },
+  "block_udp_9091": {
+    "description": "Drop pe UDP pe portul 9091, lăsând TCP și ICMP neatinse",
+    "forward_policy": "ACCEPT",
+    "rules": [
+      {
+        "chain": "FORWARD",
+        "proto": "udp",
+        "dport": 9091,
+        "action": "DROP"
+      }
+    ]
+  }
+}

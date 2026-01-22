@@ -1,0 +1,223 @@
+# ============================================================================
+# Curs 6 - Slide Outline
+# Nivelul Rețea: NAT/PAT, ARP, DHCP, ICMP, NDP, SDN
+# ============================================================================
+# Acest fișier poate fi importat în PowerPoint/reveal.js pentru structurare
+# Format: [Slide N] Titlu | Note pentru prezentator
+# ============================================================================
+
+[Slide 1] Titlu: Curs 6 - Nivelul Rețea (Partea II)
+- Subtitlu: NAT/PAT, ARP, DHCP, ICMP, NDP și SDN
+- Logo: ASE-CSIE
+- Autor: Revolvix&Hypotheticalandrei
+
+[Slide 2] Ce vom învăța astăzi
+- NAT/PAT: Traducerea adreselor de rețea
+- ARP: Rezolvarea adreselor la nivelul local
+- DHCP: Configurare automată
+- ICMP/NDP: Diagnosticare și descoperire
+- SDN: Rețele definite software
+| Note: Prezentare 100 minute, cu pauze la fiecare 25 min
+
+[Slide 3] De ce contează?
+- NAT: 99% din conexiunile domestice/business
+- ARP: Fiecare frame Ethernet folosește ARP
+- DHCP: Eliminarea configurării manuale
+- SDN: Viitorul infrastructurilor cloud
+| Note: Conectează cu experiența studenților (router acasă)
+
+[Slide 4] Recapitulare S5: IPv4/IPv6, Subnetting
+- Adresare ierarhică
+- Clase de adrese (istoric) vs CIDR
+- Subnetting și VLSM
+- De ce nu avem suficiente adrese IPv4?
+| Note: Quiz rapid - câte adrese IPv4 există?
+
+[Slide 5] Problema: Epuizarea adreselor IPv4
+- 4.3 miliarde adrese (2^32)
+- Alocare inegală istorică
+- Soluții: NAT (termen scurt), IPv6 (termen lung)
+| Diagramă: Creșterea dispozitivelor vs adrese disponibile
+
+[Slide 6] NAT - Network Address Translation
+- Definiție: Traducerea adreselor IP între rețele
+- RFC 3022 (NAT tradițional)
+- Permite mai multor dispozitive să partajeze o adresă publică
+| Diagramă: Rețea privată → Router NAT → Internet
+
+[Slide 7] Tipuri de NAT
+- NAT Static: Mapare 1:1 permanentă
+- NAT Dinamic: Mapare N:M din pool
+- PAT/NAPT: Mapare N:1 cu porturi
+| Tabel comparativ cu cazuri de utilizare
+
+[Slide 8] PAT (Port Address Translation) - Detalii
+- Cel mai comun tip (home routers)
+- Identificare flux prin: IP privat + Port sursă
+- Tabel de traducere (NAT table)
+| Exemplu numeric: 10.0.0.5:54321 → 203.0.113.1:45231
+
+[Slide 9] NAT Table - Structură
+- Coloane: IP intern, Port intern, IP extern, Port extern, Protocol, Timeout
+- Entries create la inițierea conexiunii
+- Timeout pentru eliberare resurse
+| Diagramă: Flux pachet prin NAT table
+
+[Slide 10] NAT în Linux - iptables
+- Tabel: nat
+- Chain: POSTROUTING pentru SNAT/MASQUERADE
+- Chain: PREROUTING pentru DNAT
+- Comanda: iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+| Demo: Configurare NAT în Mininet
+
+[Slide 11] NAT - Avantaje
+- Conservare adrese IPv4
+- Ascunderea topologiei interne
+- Flexibilitate în rețelele private
+| Note: Nu confunda cu securitate reală!
+
+[Slide 12] NAT - Dezavantaje
+- Încalcă principiul end-to-end
+- Complică protocoale P2P, VoIP, gaming
+- Overhead procesare
+- Necesită workarounds (STUN, TURN, ICE)
+| Discuție: De ce WebRTC e complex?
+
+[Slide 13] Întrebare de verificare NAT
+- Q: Un server vede conexiuni de la 203.0.113.1:45231 și 203.0.113.1:45232. 
+  Câte dispozitive interne pot fi implicate?
+- A: Unul sau mai multe! Portul diferențiază fluxurile, nu dispozitivele.
+| Quiz interactiv
+
+[Slide 14] ARP - Address Resolution Protocol
+- Problema: Avem IP destinație, avem nevoie de MAC
+- Soluție: Broadcast "Cine are IP X?"
+- Răspuns unicast cu MAC
+| Diagramă: ARP Request/Reply
+
+[Slide 15] ARP - Structura pachetului
+- Hardware Type (Ethernet = 1)
+- Protocol Type (IPv4 = 0x0800)
+- Operation (Request = 1, Reply = 2)
+- Sender/Target MAC și IP
+| Captură Wireshark exemplu
+
+[Slide 16] ARP Cache
+- Stocare locală a mapărilor IP→MAC
+- Timeout configurable (Linux: 60s default)
+- Comenzi: arp -n, ip neigh show
+| Demo: Observare ARP cache
+
+[Slide 17] ARP Spoofing - Risc de securitate
+- Atacatorul trimite ARP Reply fals
+- MITM (Man in the Middle)
+- Contramăsuri: Static ARP, DAI (Dynamic ARP Inspection)
+| Etică: Doar în medii de test autorizate!
+
+[Slide 18] DHCP - Dynamic Host Configuration Protocol
+- Problema: Configurare manuală IP pentru sute de dispozitive?
+- Soluție: Server DHCP alocă automat
+- DORA: Discover → Offer → Request → Acknowledge
+| Diagramă: Flux DHCP
+
+[Slide 19] DHCP - De ce broadcast inițial?
+- Clientul nu are IP
+- Nu știe unde e serverul DHCP
+- Broadcast la 255.255.255.255
+- Relay agent pentru rețele multiple
+| Note: Întrebare frecventă la examen
+
+[Slide 20] DHCP - Parametri alocați
+- IP Address
+- Subnet Mask
+- Default Gateway
+- DNS Servers
+- Lease Time
+| Opțional: NTP, TFTP boot, etc.
+
+[Slide 21] ICMP - Internet Control Message Protocol
+- Protocol de diagnosticare și erori
+- NU transportă date utilizator
+- Exemple: ping (Echo Request/Reply), traceroute
+| Tipuri comune: 0, 3, 8, 11
+
+[Slide 22] ICMP - Utilizări practice
+- ping: Verificare conectivitate
+- traceroute: Descoperire cale
+- Path MTU Discovery
+- Destination Unreachable (tip 3)
+| Demo: traceroute și interpretare
+
+[Slide 23] NDP - Neighbor Discovery Protocol (IPv6)
+- Înlocuiește ARP în IPv6
+- Funcții: Router Discovery, Prefix Discovery, Address Resolution
+- Folosește ICMPv6 (tipuri 133-137)
+| Comparație: ARP vs NDP
+
+[Slide 24] Introducere în SDN
+- Problema: Configurare manuală pe fiecare switch/router
+- Soluție: Separare control plane / data plane
+- Control centralizat prin software
+| Diagramă: Arhitectură SDN vs tradițională
+
+[Slide 25] SDN - Arhitectură
+- Application Layer: Aplicații de rețea
+- Control Layer: Controller SDN (OS-Ken, ONOS, ODL)
+- Infrastructure Layer: Switch-uri OpenFlow
+| Diagramă pe 3 nivele
+
+[Slide 26] OpenFlow - Protocolul SDN
+- Standard pentru comunicare controller-switch
+- Flow Tables: Match + Actions
+- Versiuni: 1.0, 1.3, 1.5
+| Structură flow entry
+
+[Slide 27] Flow Table - Componente
+- Match fields: MAC, IP, Port, Protocol
+- Actions: Output, Drop, Modify, Group
+- Priority: Ordinea evaluării
+- Counters: Statistici
+| Exemplu: Blocarea traficului către un IP
+
+[Slide 28] SDN - Avantaje
+- Vizibilitate globală asupra rețelei
+- Automatizare și programabilitate
+- Reacție rapidă la incidente
+- Abstractizare hardware
+| Cazuri de utilizare: DC, WAN, Security
+
+[Slide 29] SDN - Controller în acțiune
+- Mininet pentru simulare
+- OS-Ken (Python) pentru controller
+- Politici implementate ca cod
+| Demo preview: Politică "bloc trafic UDP"
+
+[Slide 30] Ce am învățat?
+- NAT/PAT: Soluție pentru IPv4, dar cu compromisuri
+- ARP/NDP: Glue între L2 și L3
+- DHCP: Automatizare esențială
+- SDN: Viitorul programabil al rețelelor
+| Legătura cu săptămânile viitoare
+
+[Slide 31] Unde se folosește în practică?
+- NAT: Orice router de acasă/business
+- ARP: Fiecare comunicare locală
+- SDN: Data centers Google, Amazon, Microsoft
+| Relevanță pentru viitori programatori
+
+[Slide 32] Temă pentru seminar
+- Experiment NAT în Mininet
+- Experiment SDN cu politici
+- Captură și analiză trafic
+| Link către starterkit
+
+[Slide 33] Întrebări?
+- Contact: [email]
+- Resurse: [link lab materials]
+| Mulțumesc pentru atenție!
+
+# ============================================================================
+# NOTĂ: Acest outline conține 33 de slide-uri
+# Timpul estimat: 90-100 minute (fără pauze)
+# Recomandare: 2.5-3 minute per slide, cu demonstrații live
+# ============================================================================
