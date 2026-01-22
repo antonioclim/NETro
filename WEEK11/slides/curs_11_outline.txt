@@ -1,0 +1,242 @@
+================================================================================
+CURS 11 – NIVELUL APLICAȚIE: FTP, DNS, SSH
+Outline pentru prezentare PowerPoint/reveal.js
+================================================================================
+
+SLIDE 1: TITLU
+- Curs 11 – Nivelul Aplicație: FTP, DNS, SSH
+- Rețele de Calculatoare (Anul 3, Sem. 2)
+- ASE București – CSIE
+
+SLIDE 2: AGENDA
+- FTP – File Transfer Protocol
+- DNS – Domain Name System
+- SSH – Secure Shell
+- Scenarii practice și demo-uri
+
+SLIDE 3: OBIECTIVE DE ÎNVĂȚARE
+- Explica diferența între protocoale orientate pe fișiere, nume și control
+- Descrie funcționarea FTP (control vs data, active vs passive)
+- Înțelege rolul DNS și procesul de rezoluție
+- Utiliza SSH pentru execuție la distanță și tunelare
+
+================================================================================
+SECȚIUNEA 1: FTP – FILE TRANSFER PROTOCOL (7 slide-uri)
+================================================================================
+
+SLIDE 4: CE ESTE FTP
+- Protocol de nivel aplicație pentru transfer fișiere
+- RFC 959 (1985) – unul dintre cele mai vechi protocoale
+- Funcționează peste TCP
+- Caracteristică distinctivă: separare control/date
+
+SLIDE 5: FTP – ARHITECTURA DUALĂ (DIAGRAMĂ)
+[Diagramă: Client ↔ Server]
+- Conexiune CONTROL: port 21, persistentă, comenzi text
+- Conexiune DATA: port 20 sau dinamic, transfer efectiv
+
+SLIDE 6: CONEXIUNEA DE CONTROL
+- Port standard: TCP 21
+- Comenzi text ASCII (USER, PASS, LIST, RETR, STOR)
+- Răspunsuri cu cod numeric (220, 331, 230, 550)
+- Persistentă pe durata sesiunii
+
+SLIDE 7: CONEXIUNEA DE DATE
+- Separată de control
+- Se deschide/închide pentru fiecare transfer
+- Mod activ: server → client
+- Mod pasiv: client → server
+
+SLIDE 8: MOD ACTIV vs MOD PASIV (DIAGRAMĂ)
+[Diagramă comparativă]
+- Activ: SERVER inițiază conexiunea de date (port 20 → client)
+- Pasiv: CLIENT inițiază conexiunea de date (client → port dinamic server)
+- Problema NAT/firewall în modul activ
+
+SLIDE 9: FTP ÎN PRACTICĂ
+- Limitări: NAT traversal, firewall, porturi multiple
+- Variante moderne:
+  - FTPS (FTP over TLS) – port 990
+  - SFTP (SSH File Transfer) – port 22
+- Relevanță didactică: separare control/date
+
+SLIDE 10: ÎNTREBĂRI FTP
+- De ce FTP folosește două conexiuni?
+- Care mod funcționează mai bine prin firewall?
+- Ce protocol modern înlocuiește FTP?
+
+================================================================================
+SECȚIUNEA 2: DNS – DOMAIN NAME SYSTEM (10 slide-uri)
+================================================================================
+
+SLIDE 11: ROLUL DNS
+- Traducere nume simbolice → adrese IP
+- Sistem distribuit și ierarhic
+- Esențial pentru funcționarea Internetului
+- Majoritatea aplicațiilor depind implicit de DNS
+
+SLIDE 12: ARHITECTURA DNS (DIAGRAMĂ)
+[Diagramă ierarhică]
+- Root servers (.)
+- TLD servers (.com, .ro, .org)
+- Authoritative servers (example.com)
+- Recursive resolvers (ISP, 8.8.8.8)
+
+SLIDE 13: ACTORII DNS
+- Stub resolver: în OS/browser, interogări simple
+- Recursive resolver: rezolvă complet, cache-uiește
+- Authoritative server: deține zona, răspuns final
+- Root/TLD: direcționează ierarhic
+
+SLIDE 14: PROCESUL DE REZOLUȚIE (DIAGRAMĂ)
+[Diagramă flow]
+1. Client → Recursive resolver
+2. Resolver → Root server ("Cine știe .com?")
+3. Resolver → TLD server ("Cine știe example.com?")
+4. Resolver → Authoritative ("Care e IP pentru www?")
+5. Răspuns înapoi la client
+
+SLIDE 15: TIPURI DE ÎNREGISTRĂRI DNS
+| Tip | Scop | Exemplu |
+|-----|------|---------|
+| A | IPv4 | www → 93.184.216.34 |
+| AAAA | IPv6 | www → 2606:2800:... |
+| MX | Mail | @ → mail.example.com |
+| CNAME | Alias | blog → www |
+| NS | Nameserver | @ → ns1.example.com |
+| TXT | Text/SPF | @ → "v=spf1 ..." |
+
+SLIDE 16: STRUCTURA PACHETULUI DNS (DIAGRAMĂ)
+[Diagramă RFC 1035]
+- Header (12 bytes): ID, Flags, Counts
+- Question: QNAME, QTYPE, QCLASS
+- Answer: NAME, TYPE, CLASS, TTL, RDATA
+
+SLIDE 17: TTL ȘI CACHING
+- TTL (Time To Live): durata de cache
+- TTL mic (60s): flexibilitate, trafic mare
+- TTL mare (86400s): performanță, propagare lentă
+- Trade-off: viteză vs actualitate
+
+SLIDE 18: SECURITATEA DNS
+- DNS clasic: text clar, vulnerabil la spoofing
+- DNSSEC: semnături digitale, lanț de încredere
+- DoH (DNS over HTTPS): port 443
+- DoT (DNS over TLS): port 853
+
+SLIDE 19: DNSSEC – LANȚUL DE ÎNCREDERE (DIAGRAMĂ)
+[Diagramă chain of trust]
+- Root Key → TLD Key → Zone Key
+- DNSKEY, RRSIG, DS records
+- Verificare criptografică end-to-end
+
+SLIDE 20: ÎNTREBĂRI DNS
+- Care e diferența între resolver recursiv și authoritative?
+- Ce se întâmplă dacă TTL expiră?
+- De ce DNSSEC nu e folosit universal?
+
+================================================================================
+SECȚIUNEA 3: SSH – SECURE SHELL (8 slide-uri)
+================================================================================
+
+SLIDE 21: CE ESTE SSH
+- Protocol securizat de acces la distanță
+- Port standard: TCP 22
+- Înlocuiește: telnet, rsh, ftp nesecurizat
+- Oferă: autentificare, criptare, integritate
+
+SLIDE 22: ARHITECTURA SSH (DIAGRAMĂ)
+[Diagramă straturi]
+- Transport Layer: negociere, criptare, MAC
+- User Authentication: password, publickey, keyboard-interactive
+- Connection Layer: multiplexare canale
+
+SLIDE 23: METODE DE AUTENTIFICARE
+1. Password: simplu, mai puțin sigur
+2. Public Key: cel mai sigur, ~/.ssh/authorized_keys
+3. Certificate: pentru organizații mari
+4. Keyboard-interactive: 2FA, TOTP
+
+SLIDE 24: SSH CANALE ȘI MULTIPLEXARE (DIAGRAMĂ)
+[Diagramă canale]
+- O conexiune TCP, multiple canale logice
+- Shell interactiv (pty)
+- Exec (comandă unică)
+- SFTP/SCP (transfer fișiere)
+- Port forwarding (tunneling)
+
+SLIDE 25: PORT FORWARDING – LOCAL
+[Diagramă Local Forwarding]
+- ssh -L 8080:target:80 gateway
+- Accesezi localhost:8080 → ajunge la target:80
+- Util pentru: baze de date interne, servicii protejate
+
+SLIDE 26: PORT FORWARDING – REMOTE
+[Diagramă Remote Forwarding]
+- ssh -R 8080:localhost:80 server
+- Server:8080 → ajunge la localhost:80
+- Util pentru: expunere servicii locale (ngrok-style)
+
+SLIDE 27: PORT FORWARDING – DYNAMIC (SOCKS)
+[Diagramă Dynamic Forwarding]
+- ssh -D 1080 server
+- Proxy SOCKS5 local → tot traficul prin server
+- Util pentru: navigare anonimă, acces la rețele restricționate
+
+SLIDE 28: SSH CA INFRASTRUCTURĂ
+- Ansible: orchestrare prin SSH
+- Fabric/Paramiko: automatizare Python
+- Git over SSH: acces securizat repositories
+- Bastion hosts: punct de intrare securizat
+
+================================================================================
+SECȚIUNEA 4: SCENARII PRACTICE (4 slide-uri)
+================================================================================
+
+SLIDE 29: SCENARIU 1 – FTP CONTROL VS DATA
+- Server FTP (pyftpdlib) + Client Python
+- Observăm două conexiuni în Wireshark
+- Comparăm active vs passive mode
+- Demo: docker/ftp_demo/
+
+SLIDE 30: SCENARIU 2 – DNS RESOLUTION
+- Authoritative DNS + Recursive resolver
+- Modificăm zona, observăm propagarea TTL
+- Client Python pentru query-uri
+- Demo: docker/dns_demo/
+
+SLIDE 31: SCENARIU 3 – SSH PROVISIONING
+- Descriere infrastructură în JSON
+- Execuție comenzi remote cu Paramiko
+- Transfer fișiere SFTP
+- Demo: docker/ssh_demo/
+
+SLIDE 32: SCENARIU 4 – MININET + LOAD BALANCING
+- Topologie cu 3 backends și 1 LB
+- Test round-robin, least_conn, ip_hash
+- Captură trafic și analiză
+- Demo: mininet/topo_11_base.py
+
+================================================================================
+RECAPITULARE ȘI ÎNCHEIERE (3 slide-uri)
+================================================================================
+
+SLIDE 33: RECAPITULARE
+- FTP: separare control/date, active vs passive, limitări NAT
+- DNS: sistem distribuit ierarhic, TTL, DNSSEC
+- SSH: protocol securizat, multiplexare, tunneling
+
+SLIDE 34: DE REȚINUT
+- Protocoalele clasice sunt fundația sistemelor moderne
+- Înțelegerea mecanismelor ajută la debugging
+- Securitatea e adăugată post-factum (FTPS, DNSSEC, SSH)
+
+SLIDE 35: ÎNTREBĂRI & RESURSE
+- RFC 959 (FTP), RFC 1035 (DNS), RFC 4251-4254 (SSH)
+- Kurose & Ross, Cap. 2 (Application Layer)
+- Laborator: starterkit_saptamana_11/
+
+================================================================================
+TOTAL: ~35 slide-uri
+TIMP ESTIMAT: 80-90 minute (cu pauze)
+================================================================================

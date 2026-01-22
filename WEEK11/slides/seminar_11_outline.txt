@@ -1,0 +1,352 @@
+================================================================================
+SEMINAR 11 – APLICAȚII DISTRIBUITE CU NGINX
+Load Balancing, Reverse Proxy, Docker Compose
+Outline pentru prezentare PowerPoint/reveal.js
+================================================================================
+
+SLIDE 1: TITLU
+- Seminar 11 – Aplicații Distribuite cu Nginx
+- Load Balancing & Reverse Proxy
+- Docker Compose Orchestration
+
+SLIDE 2: AGENDA
+- Concepte: Reverse Proxy și Load Balancing
+- Demo 1: Nginx cu Docker Compose
+- Demo 2: Load Balancer Python Custom
+- Demo 3: Topologie Mininet
+- Exerciții practice
+
+SLIDE 3: OBIECTIVE DE ÎNVĂȚARE
+- Configura Nginx ca reverse proxy
+- Implementa algoritmi de load balancing
+- Compara soluții industriale vs prototipuri
+- Diagnostica probleme cu tcpdump/curl
+
+================================================================================
+SECȚIUNEA 1: CONCEPTE TEORETICE (6 slide-uri)
+================================================================================
+
+SLIDE 4: CE ESTE UN REVERSE PROXY
+[Diagramă: Client → Reverse Proxy → Backend(s)]
+- Proxy "invers": reprezintă serverele, nu clienții
+- Funcții: load balancing, caching, SSL termination
+- Exemple: Nginx, HAProxy, Envoy, Traefik
+
+SLIDE 5: FORWARD VS REVERSE PROXY (DIAGRAMĂ)
+[Diagramă comparativă]
+- Forward: Client → Proxy → Internet (ascunde clientul)
+- Reverse: Internet → Proxy → Servers (ascunde serverele)
+- Cazuri de utilizare diferite
+
+SLIDE 6: LOAD BALANCING – DE CE?
+- Scalabilitate orizontală (mai multe servere)
+- Disponibilitate (dacă unul cade, altele preiau)
+- Performanță (distribuție uniformă)
+- Maintenance (rolling updates)
+
+SLIDE 7: ALGORITMI DE LOAD BALANCING
+| Algoritm | Descriere | Când se folosește |
+|----------|-----------|-------------------|
+| Round Robin | Rotație ciclică | Default, simplu |
+| Weighted RR | Rotație cu ponderi | Servere neomogene |
+| Least Conn | Cel mai puțin ocupat | Cereri cu durate variate |
+| IP Hash | Hash pe IP client | Sticky sessions |
+| Random | Aleator | Distribuție uniformă |
+
+SLIDE 8: HEALTH CHECKS
+- Pasive: detectează erori din răspunsuri (5xx, timeout)
+- Active: probe periodice GET /health
+- Parametri: interval, threshold, timeout
+- Acțiune: eliminare temporară din pool
+
+SLIDE 9: STICKY SESSIONS (SESSION PERSISTENCE)
+[Diagramă: același client → același backend]
+- Problemă: stare în memorie per-server
+- Soluții: cookie, IP hash, header custom
+- Trade-off: sticky vs distribuție uniformă
+
+================================================================================
+SECȚIUNEA 2: DEMO NGINX + DOCKER COMPOSE (8 slide-uri)
+================================================================================
+
+SLIDE 10: ARHITECTURA DEMO NGINX
+[Diagramă: Client → Nginx:8080 → web1:8000, web2:8000, web3:8000]
+- 3 backends Python simplu
+- 1 Nginx ca reverse proxy/LB
+- Docker Compose pentru orchestrare
+
+SLIDE 11: STRUCTURA PROIECTULUI
+```
+docker/nginx_compose/
+├── docker-compose.yml
+├── nginx.conf
+├── web1/index.html
+├── web2/index.html
+└── web3/index.html
+```
+
+SLIDE 12: docker-compose.yml (COD)
+```yaml
+services:
+  web1:
+    image: python:3.11-alpine
+    command: ["python3", "-m", "http.server", "8000"]
+    volumes: ["./web1:/app"]
+  # ... web2, web3 similar
+  nginx:
+    image: nginx:latest
+    ports: ["8080:80"]
+    volumes: ["./nginx.conf:/etc/nginx/nginx.conf:ro"]
+    depends_on: [web1, web2, web3]
+```
+
+SLIDE 13: nginx.conf – UPSTREAM (COD)
+```nginx
+upstream backends {
+    server web1:8000;
+    server web2:8000;
+    server web3:8000;
+}
+server {
+    listen 80;
+    location / {
+        proxy_pass http://backends;
+    }
+}
+```
+
+SLIDE 14: RULARE DEMO NGINX
+```bash
+cd docker/nginx_compose
+docker compose up -d
+# Test round-robin
+for i in {1..9}; do curl -s http://localhost:8080/; done
+# Așteptat: web1, web2, web3, web1, web2, web3...
+```
+
+SLIDE 15: VARIANTE nginx.conf
+```nginx
+# Least connections
+upstream backends { least_conn; server web1:8000; ... }
+
+# IP Hash (sticky)
+upstream backends { ip_hash; server web1:8000; ... }
+
+# Weighted
+upstream backends { server web1:8000 weight=3; server web2:8000; }
+```
+
+SLIDE 16: OBSERVARE TRAFIC
+```bash
+# Logs Nginx
+docker compose logs -f nginx
+
+# tcpdump în container
+docker exec -it nginx tcpdump -i any -n tcp port 8000 -c 20
+
+# Verificare health
+curl -I http://localhost:8080/
+```
+
+SLIDE 17: EXERCIȚIU NGINX
+1. Modificați nginx.conf pentru least_conn
+2. Reporniți: docker compose restart nginx
+3. Testați cu 20 cereri concurente
+4. Observați distribuția în logs
+
+================================================================================
+SECȚIUNEA 3: DEMO LOAD BALANCER PYTHON CUSTOM (8 slide-uri)
+================================================================================
+
+SLIDE 18: DE CE UN LB CUSTOM?
+- Înțelegerea mecanismelor interne
+- Flexibilitate maximă (algoritmi custom)
+- Didactic: vedem exact ce se întâmplă
+- Comparație cu soluții industriale
+
+SLIDE 19: ARHITECTURA LB PYTHON
+[Diagramă: Client → simple_lb.py:8080 → backend1:8001, backend2:8002, backend3:8003]
+- Socket server Python
+- Selecție backend conform algoritm
+- Proxy transparent al cererii/răspunsului
+
+SLIDE 20: ex_11_02_loadbalancer.py – STRUCTURĂ
+```python
+class LoadBalancer:
+    def __init__(self, backends, algorithm):
+        self.backends = backends
+        self.algorithm = algorithm
+        self.index = 0  # pentru round-robin
+        self.connections = {}  # pentru least_conn
+    
+    def select_backend(self, client_ip):
+        if self.algorithm == "rr":
+            return self._round_robin()
+        elif self.algorithm == "least_conn":
+            return self._least_connections()
+        elif self.algorithm == "ip_hash":
+            return self._ip_hash(client_ip)
+```
+
+SLIDE 21: ALGORITMUL ROUND-ROBIN (COD)
+```python
+def _round_robin(self):
+    backend = self.backends[self.index]
+    self.index = (self.index + 1) % len(self.backends)
+    return backend
+```
+- Simplu și eficient
+- Distribuție perfectă pe termen lung
+- Nu ține cont de load efectiv
+
+SLIDE 22: ALGORITMUL LEAST CONNECTIONS (COD)
+```python
+def _least_connections(self):
+    return min(
+        self.backends,
+        key=lambda b: self.connections.get(b, 0)
+    )
+```
+- Ține cont de conexiuni active
+- Mai bun pentru cereri cu durată variabilă
+- Overhead de tracking
+
+SLIDE 23: ALGORITMUL IP HASH (COD)
+```python
+def _ip_hash(self, client_ip):
+    hash_value = hash(client_ip)
+    index = hash_value % len(self.backends)
+    return self.backends[index]
+```
+- Același client → același backend (sticky)
+- Util pentru sesiuni/stare locală
+- Dezechilibru posibil
+
+SLIDE 24: RULARE DEMO LB PYTHON
+```bash
+# Terminal 1-3: pornire backends
+make backends-start
+# Terminal 4: pornire LB
+make lb-start
+# Terminal 5: test
+for i in {1..9}; do curl -s http://localhost:8080/; done
+```
+
+SLIDE 25: COMPARAȚIE NGINX VS PYTHON LB
+| Aspect | Nginx | Python Custom |
+|--------|-------|---------------|
+| Performanță | ~50,000 rps | ~1,000 rps |
+| Config | Declarativă | Programatică |
+| Health checks | Built-in | Manual |
+| Overhead | Minimal | Python runtime |
+| Flexibilitate | Limitată | Maximă |
+| Producție | ✓ | ✗ (doar dev/edu) |
+
+================================================================================
+SECȚIUNEA 4: DEMO MININET (5 slide-uri)
+================================================================================
+
+SLIDE 26: TOPOLOGIE MININET
+[Diagramă: h1 ↔ s1 ↔ {h2, h3, h4} + h5(lb)]
+- h1: client
+- h2, h3, h4: backends
+- h5: load balancer
+- s1: switch OpenFlow
+
+SLIDE 27: topo_11_base.py – STRUCTURĂ
+```python
+from mininet.topo import Topo
+from mininet.net import Mininet
+
+class LBTopo(Topo):
+    def build(self):
+        s1 = self.addSwitch('s1')
+        client = self.addHost('h1', ip='10.0.0.1')
+        lb = self.addHost('h5', ip='10.0.0.5')
+        for i in [2, 3, 4]:
+            h = self.addHost(f'h{i}', ip=f'10.0.0.{i}')
+            self.addLink(h, s1)
+        self.addLink(client, s1)
+        self.addLink(lb, s1)
+```
+
+SLIDE 28: RULARE DEMO MININET
+```bash
+sudo python3 mininet/topologies/topo_11_base.py --test
+# sau interactiv:
+sudo python3 mininet/topologies/topo_11_base.py --cli
+mininet> h2 python3 -m http.server 8000 &
+mininet> h1 curl http://10.0.0.2:8000/
+```
+
+SLIDE 29: CAPTURĂ TRAFIC ÎN MININET
+```bash
+mininet> h5 tcpdump -i h5-eth0 -n tcp port 8080 -c 10
+# sau cu tshark pentru detalii:
+mininet> h5 tshark -i h5-eth0 -f "tcp port 8080" -c 10
+```
+
+SLIDE 30: EXERCIȚIU MININET
+1. Porniți topologia extinsă (topo_11_extended.py)
+2. Configurați rutarea pe h5 ca load balancer
+3. Testați cu curl de pe h1
+4. Capturați și analizați traficul
+
+================================================================================
+SECȚIUNEA 5: EXERCIȚII ȘI CONSOLIDARE (5 slide-uri)
+================================================================================
+
+SLIDE 31: EXERCIȚIU 1 – NGINX WEIGHTED
+- Configurați weights: web1=5, web2=2, web3=1
+- Testați cu 80 cereri
+- Verificați distribuția (62.5%, 25%, 12.5%)
+
+SLIDE 32: EXERCIȚIU 2 – HEALTH CHECKS
+```python
+# Adăugați la loadbalancer.py:
+def health_check(self, backend):
+    try:
+        sock = socket.create_connection(backend, timeout=2)
+        sock.close()
+        return True
+    except:
+        return False
+```
+
+SLIDE 33: EXERCIȚIU 3 – CUSTOM ALGORITHM
+- Implementați "Random with Weights"
+- Backend-urile au ponderi configurabile
+- Selecția aleatoare ține cont de ponderi
+
+SLIDE 34: EXERCIȚIU CHALLENGE – LEAST RESPONSE TIME
+- Măsurați timpul de răspuns per-backend
+- Selectați backend-ul cu cel mai mic timp mediu
+- Decay exponențial pentru medie mobilă
+
+SLIDE 35: CONTRIBUȚIA LA PROIECT
+- Artefact livrabil: Docker Compose funcțional
+- Cerințe: Nginx + min 2 backends + health script
+- Documentație: README cu instrucțiuni
+- Deadline: conform calendarului
+
+================================================================================
+RECAPITULARE (2 slide-uri)
+================================================================================
+
+SLIDE 36: RECAPITULARE
+- Reverse proxy: intermediar pentru servere backend
+- Load balancing: distribuție cereri (RR, least_conn, ip_hash)
+- Nginx: soluție industrială, configurare declarativă
+- Python LB: didactic, înțelegere mecanisme
+- Mininet: simulare topologii reale
+
+SLIDE 37: RESURSE ȘI ÎNTREBĂRI
+- Nginx docs: nginx.org/en/docs/
+- HAProxy docs: haproxy.org
+- Kit laborator: starterkit_saptamana_11/
+- Întrebări?
+
+================================================================================
+TOTAL: ~37 slide-uri
+TIMP ESTIMAT: 90-100 minute (seminar complet)
+================================================================================

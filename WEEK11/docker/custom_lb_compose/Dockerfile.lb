@@ -1,0 +1,20 @@
+# =============================================================================
+# Dockerfile.lb – Custom Python Load Balancer
+# =============================================================================
+# Imagine minimală cu Python pentru load balancer-ul custom
+# =============================================================================
+
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+# Copiem scriptul
+COPY simple_lb.py .
+
+# Expunem portul
+EXPOSE 8080
+
+# Rulăm load balancer-ul
+CMD ["python3", "simple_lb.py"]
+
+# Revolvix&Hypotheticalandrei

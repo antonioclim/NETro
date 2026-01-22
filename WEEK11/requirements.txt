@@ -1,0 +1,14 @@
+# =============================================================================
+# requirements.txt – Dependențe Python pentru Săptămâna 11
+# =============================================================================
+# Instalare: pip install -r requirements.txt --break-system-packages
+# =============================================================================
+
+# DNS - pentru exercițiul client DNS
+dnspython>=2.4.0
+
+# SSH - pentru demo-uri provisioning
+paramiko>=3.3.0
+
+# FTP - pentru demo server FTP
+pyftpdlib>=1.5.0
