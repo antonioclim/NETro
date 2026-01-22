@@ -1,0 +1,281 @@
+# Outline Slide-uri Seminar 1: Analiză de Rețea
+# Format: Titlu slide | Bullet points | Demo/Comandă
+
+================================================================================
+SECȚIUNEA 1: INTRODUCERE (10 minute)
+================================================================================
+
+SLIDE 1: Titlu
+- Seminar 1: Analiză de Rețea
+- Wireshark, tshark, netcat
+- Exerciții practice
+| 
+
+SLIDE 2: Obiective
+- Diagnostic rețea: ip, ping, ss
+- Server/client: netcat
+- Captură: tshark
+- Analiză: TCP handshake
+| 
+
+SLIDE 3: Verificare mediu
+- Deschideți terminal
+- cd ~/Desktop/S1_starterkit
+- make verify
+- Toate cu ✓?
+| Demo: make verify
+
+================================================================================
+SECȚIUNEA 2: DIAGNOSTIC REȚEA (25 minute)
+================================================================================
+
+SLIDE 4: Comenzi de diagnostic
+- ip addr - interfețe și adrese
+- ip route - tabela de rutare
+- ping - testare conectivitate
+- ss - socket statistics
+| 
+
+SLIDE 5: Demo: ip addr
+- ip addr show
+- ip -4 -brief addr
+- Identificăm: lo, eth0
+- Observăm: IP, mască
+| Demo: ip addr show
+
+SLIDE 6: Interpretare output
+- lo: loopback (127.0.0.1)
+- eth0: interfață rețea
+- /24 = 255.255.255.0
+- state UP = funcțională
+| Explicație pe whiteboard
+
+SLIDE 7: Demo: ip route
+- ip route show
+- default via X.X.X.X
+- Gateway = router
+| Demo: ip route
+
+SLIDE 8: Demo: ping
+- ping -c 4 127.0.0.1
+- ping -c 4 [gateway]
+- ping -c 4 8.8.8.8
+- Observăm: RTT, loss
+| Demo: ping localhost
+
+SLIDE 9: Interpretare ping
+- icmp_seq = număr pachet
+- ttl = Time To Live
+- time = RTT în ms
+- Statistici la final
+| Explicație metrici
+
+SLIDE 10: Demo: ss
+- ss -tlnp (TCP listen)
+- ss -ulnp (UDP listen)
+- ss -tnp (conexiuni TCP)
+- Identificăm: port, PID
+| Demo: ss -tlnp
+
+SLIDE 11: Exercițiu 1
+- Ping loopback, gateway, 8.8.8.8
+- Notați RTT mediu
+- Care e cel mai mic? De ce?
+| 5 minute individual
+
+================================================================================
+SECȚIUNEA 3: NETCAT SERVER/CLIENT (25 minute)
+================================================================================
+
+SLIDE 12: Ce este netcat?
+- "Swiss army knife" networking
+- Creare server TCP/UDP
+- Conectare ca client
+- Transfer date
+| 
+
+SLIDE 13: Server TCP
+- Terminal 1: nc -l -p 9999
+- -l = listen mode
+- -p = port
+- Așteaptă conexiuni
+| Demo: nc -l -p 9999
+
+SLIDE 14: Client TCP
+- Terminal 2: nc localhost 9999
+- Conectare la server
+- Mesaje bidirecționale
+- Ctrl+C pentru ieșire
+| Demo: conectare client
+
+SLIDE 15: Demo live
+- T1: server (nc -l -p 9999)
+- T2: client (nc localhost 9999)
+- Trimitere mesaje
+- Observație: text apare instant
+| Demo interactiv
+
+SLIDE 16: Verificare port
+- ss -tlnp | grep 9999
+- Vedem: LISTEN, PID
+- Confirmăm server activ
+| Demo: ss | grep
+
+SLIDE 17: Trimitere automatizată
+- echo "Hello" | nc localhost 9999
+- cat file.txt | nc localhost 9999
+- Util pentru scripting
+| Demo: echo | nc
+
+SLIDE 18: UDP vs TCP
+- TCP: nc -l -p 9999
+- UDP: nc -u -l -p 8888
+- -u = UDP mode
+- Diferențe: conexiune, fiabilitate
+| 
+
+SLIDE 19: Demo UDP
+- T1: nc -u -l -p 8888
+- T2: nc -u localhost 8888
+- Nu e handshake!
+- Fire-and-forget
+| Demo: UDP server/client
+
+SLIDE 20: Exercițiu 2
+- Creați server TCP pe port 5000
+- Conectați-vă din alt terminal
+- Trimiteți 3 mesaje
+| 5 minute individual
+
+================================================================================
+SECȚIUNEA 4: CAPTURĂ CU TSHARK (30 minute)
+================================================================================
+
+SLIDE 21: Ce este tshark?
+- Wireshark în terminal
+- Captură și analiză pachete
+- Automatizabil (scripting)
+- Ideal pentru servere/CI
+| 
+
+SLIDE 22: Comandă de bază
+- tshark -i lo -f "port 9999"
+- -i = interfață
+- -f = filtru captură (BPF)
+- Output live în terminal
+| Demo: tshark -i lo
+
+SLIDE 23: Salvare în fișier
+- tshark -i lo -f "port 9999" -w captura.pcap
+- -w = write to file
+- Format PCAP standard
+- Ctrl+C oprește captura
+| 
+
+SLIDE 24: Experiment complet
+- T1: tshark -i lo -f "port 9999" -w cap.pcap
+- T2: nc -l -p 9999
+- T3: echo "Test" | nc localhost 9999
+- T1: Ctrl+C
+| Demo pas cu pas
+
+SLIDE 25: Citire captură
+- tshark -r cap.pcap
+- Afișează toate pachetele
+- Format: nr, timp, src→dst, protocol, info
+| Demo: tshark -r
+
+SLIDE 26: TCP Handshake
+- Pachet 1: [SYN]
+- Pachet 2: [SYN, ACK]
+- Pachet 3: [ACK]
+- Three-way handshake!
+| Explicație pe whiteboard
+
+SLIDE 27: Diagrama Handshake
+- Client → Server: SYN (seq=x)
+- Server → Client: SYN-ACK (seq=y, ack=x+1)
+- Client → Server: ACK (seq=x+1, ack=y+1)
+| Diagrama animată
+
+SLIDE 28: Filtrare pachete
+- -Y "tcp.flags.syn==1"
+- -Y "tcp.port==9999"
+- -Y "ip.src==127.0.0.1"
+- Display filters
+| Demo: filtre
+
+SLIDE 29: Extragere câmpuri
+- tshark -r cap.pcap -T fields -e frame.number -e tcp.flags.str
+- -T fields = format câmpuri
+- -e = câmp de extras
+| Demo: extragere
+
+SLIDE 30: Export CSV
+- tshark -r cap.pcap -T fields -E header=y -E separator=, ...
+- Pentru analiză Python/Excel
+- Automatizare rapoarte
+| Demo: export CSV
+
+SLIDE 31: Exercițiu 3
+- Capturați un TCP handshake
+- Identificați cele 3 pachete
+- Ce flag-uri vedeți?
+| 10 minute individual
+
+================================================================================
+SECȚIUNEA 5: COMPARAȚIE TCP/UDP (10 minute)
+================================================================================
+
+SLIDE 32: TCP vs UDP în practică
+- Trimiteți "Hello" via TCP
+- Trimiteți "Hello" via UDP
+- Comparați numărul de pachete
+- TCP: ~8, UDP: 1
+| Demo comparativ
+
+SLIDE 33: Tabel comparativ
+- TCP: conexiune, ACK, ordine, overhead mare
+- UDP: fără conexiune, fără ACK, rapid, overhead mic
+- Când folosim fiecare?
+| 
+
+SLIDE 34: Use cases
+- TCP: web, email, fișiere, SSH
+- UDP: streaming, gaming, DNS, VoIP
+- Alegere: fiabilitate vs latență
+| Discuție
+
+================================================================================
+SECȚIUNEA 6: RECAPITULARE (10 minute)
+================================================================================
+
+SLIDE 35: Recapitulare comenzi
+- ip addr, ip route
+- ping
+- ss -tlnp
+- nc -l -p PORT
+- tshark -i lo -f "..." -w file.pcap
+| 
+
+SLIDE 36: Exerciții rămase
+- Ex 4: TCP vs UDP (mediu)
+- Ex 5: Export CSV (mediu-avansat)
+- Ex 6: Throughput (avansat)
+- Challenge: Mini HTTP
+| Pentru acasă
+
+SLIDE 37: Săptămâna viitoare
+- Seminar 2: Programare socket Python
+- Pregătire: module socket
+- Exerciții: ex_1_02_tcp_server_client.py
+| 
+
+SLIDE 38: Întrebări?
+- Întrebări și clarificări
+- Revolvix&Hypotheticalandrei
+| 
+
+================================================================================
+END OF OUTLINE
+================================================================================

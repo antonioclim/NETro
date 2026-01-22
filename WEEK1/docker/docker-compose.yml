@@ -1,0 +1,79 @@
+#===============================================================================
+# docker-compose.yml - Orchestrare containere pentru S1
+#===============================================================================
+# Rețele de Calculatoare - Săptămâna 1
+# ASE București
+#
+# Utilizare:
+#   docker compose up -d          # Pornire
+#   docker compose exec lab bash  # Shell interactiv
+#   docker compose down           # Oprire
+#===============================================================================
+
+version: '3.8'
+
+services:
+  lab:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: s1_lab
+    hostname: student-vm
+    
+    # Capabilități necesare pentru operații de rețea
+    cap_add:
+      - NET_ADMIN      # Pentru configurare rețea
+      - NET_RAW        # Pentru captură pachete
+      - SYS_PTRACE     # Pentru debugging
+    
+    # Securitate
+    security_opt:
+      - apparmor:unconfined  # Necesar pentru tshark
+    
+    # Rețea
+    networks:
+      - labnet
+    
+    # Volume pentru persistența datelor
+    volumes:
+      - ../pcap:/home/student/starterkit/pcap
+      - lab_outputs:/home/student/outputs
+    
+    # Variabile de mediu
+    environment:
+      - TERM=xterm-256color
+      - PS1=\[\e[32m\]student@lab\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]$ 
+    
+    # Menține containerul activ
+    stdin_open: true
+    tty: true
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Server de test opțional
+  echo-server:
+    image: alpine:latest
+    container_name: s1_echo
+    hostname: echo-server
+    command: >
+      sh -c "apk add --no-cache netcat-openbsd &&
+             while true; do
+               echo 'Echo server ready on port 7777';
+               nc -l -p 7777 -e cat;
+             done"
+    networks:
+      - labnet
+    expose:
+      - "7777"
+
+networks:
+  labnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  lab_outputs:
+    name: s1_lab_outputs

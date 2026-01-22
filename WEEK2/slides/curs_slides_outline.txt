@@ -1,0 +1,374 @@
+# =============================================================================
+# CURS 2 - SLIDE OUTLINE
+# Introducere în Programarea de Rețea
+# =============================================================================
+# Rețele de Calculatoare - ASE București, CSIE
+# Format: Text structurat pentru import în PowerPoint / reveal.js / Google Slides
+# Revolvix&Hypotheticalandrei
+# =============================================================================
+
+## METADATA
+- Durată: 100 minute (2h curs)
+- Audiență: Anul 3, Informatică Economică
+- Prerechizite: Curs 1 (Fundamente rețele, Modelul OSI, TCP/IP)
+- Obiective: Socket API, TCP vs UDP, Model client-server
+
+================================================================================
+SECȚIUNEA 1: INTRODUCERE ȘI CONTEXT (15 min)
+================================================================================
+
+### SLIDE 1: Titlu
+- Titlu: "Introducere în Programarea de Rețea"
+- Subtitlu: "Socket API • TCP vs UDP • Model Client-Server"
+- Visual: Diagramă abstractă rețea cu noduri interconectate
+- Footer: Săptămâna 2 / Semestrul 2
+
+### SLIDE 2: Agenda Cursului
+- Bullet 1: Ce este un socket și de ce este important
+- Bullet 2: TCP vs UDP - caracteristici și cazuri de utilizare
+- Bullet 3: Modelul client-server în practică
+- Bullet 4: Demonstrații live de cod
+- Bullet 5: Pregătire pentru seminar
+
+### SLIDE 3: Recap Săptămâna 1
+- Modelul OSI - 7 straturi (diagramă mică)
+- Modelul TCP/IP - 4 straturi
+- Întrebare de verificare: "La ce nivel operează socket-urile?"
+- Răspuns: Nivelul Transport (Layer 4)
+
+### SLIDE 4: Ce vom învăța azi
+- Termeni: socket, bind, listen, connect, accept
+- Înțelegere: fluxul de date în aplicații de rețea
+- Aplicare: scrierea unui server/client minimal
+- Analiză: observarea traficului cu Wireshark
+- Visual: Roadmap cu checkpoints
+
+### SLIDE 5: De ce contează?
+- Statistic: "93% din aplicațiile enterprise folosesc comunicare în rețea"
+- Real-world: Web servers, API-uri, microservicii, IoT
+- Career: Skill obligatoriu pentru backend developers
+- Quote: "Rețeaua este calculatorul" - Sun Microsystems
+
+================================================================================
+SECȚIUNEA 2: FUNDAMENTELE SOCKET-URILOR (25 min)
+================================================================================
+
+### SLIDE 6: Ce este un Socket?
+- Definiție: "Punct final (endpoint) pentru comunicare bidirecțională"
+- Analogie: "Priza electrică pentru date"
+- Componente: IP:Port = Adresă completă
+- Visual: Diagramă socket ca interfață între aplicație și stiva TCP/IP
+
+### SLIDE 7: Anatomia unui Socket
+- Familie de adrese: AF_INET (IPv4), AF_INET6 (IPv6)
+- Tip socket: SOCK_STREAM (TCP), SOCK_DGRAM (UDP)
+- Protocol: implicit (0) sau explicit (IPPROTO_TCP)
+- Cod Python:
+  ```
+  socket.socket(AF_INET, SOCK_STREAM)
+  ```
+
+### SLIDE 8: Socket Address - Tuple (IP, Port)
+- IP Address: identifică host-ul în rețea
+- Port: identifică aplicația pe host (0-65535)
+- Well-known ports: 0-1023 (necesită root)
+- Registered ports: 1024-49151
+- Dynamic ports: 49152-65535
+- Visual: Diagramă apartament (IP=clădire, Port=apartament)
+
+### SLIDE 9: Operații fundamentale pe Socket
+- Tabel cu 2 coloane: SERVER vs CLIENT
+- Server: socket() → bind() → listen() → accept() → recv/send
+- Client: socket() → connect() → send/recv
+- Visual: Două coloane cu săgeți de timp
+
+### SLIDE 10: socket() - Crearea
+- Creează un socket descriptor (file descriptor pe Linux)
+- Returnează un întreg (fd) sau eroare
+- Nu alocă încă resurse de rețea
+- Cod: `s = socket.socket(AF_INET, SOCK_STREAM)`
+- Eroare comună: "Too many open files"
+
+### SLIDE 11: bind() - Atașarea
+- Asociază socket-ul cu o adresă locală (IP:Port)
+- Necesar pentru servere (să știe clienții unde să se conecteze)
+- Optional pentru clienți (SO primește port efemer)
+- Cod: `s.bind(('0.0.0.0', 8080))`
+- '0.0.0.0' = toate interfețele
+
+### SLIDE 12: listen() - Pregătirea
+- Marchează socket-ul ca "pasiv" (acceptă conexiuni)
+- Parametru: backlog (coadă de conexiuni pending)
+- Valoare tipică: 5-128
+- Cod: `s.listen(5)`
+- Visual: Coadă de clienți la un ghișeu
+
+### SLIDE 13: accept() - Acceptarea
+- Blochează până vine o conexiune
+- Returnează: (socket_nou, adresa_client)
+- Socket-ul original rămâne pentru noi conexiuni
+- Cod: `conn, addr = s.accept()`
+- Visual: Fork - un socket pentru fiecare client
+
+### SLIDE 14: connect() - Conectarea (Client)
+- Inițiază three-way handshake (TCP)
+- Blochează până conexiunea e stabilită sau timeout
+- Cod: `s.connect(('server.com', 8080))`
+- Erori comune: ConnectionRefused, Timeout
+
+### SLIDE 15: send()/recv() - Transferul
+- send(bytes): trimite date (poate trimite mai puțin!)
+- recv(bufsize): primește date (poate primi mai puțin!)
+- Ambele blochează implicit
+- IMPORTANT: Trebuie să gestionezi cazul când recv() = b''
+- Cod minimal:
+  ```
+  s.send(b'Hello')
+  data = s.recv(1024)
+  ```
+
+### SLIDE 16: close() - Închiderea
+- Eliberează resurse (file descriptor, buffers)
+- TCP: inițiază four-way handshake pentru închidere grațioasă
+- Best practice: folosește context manager (`with`)
+- Cod:
+  ```
+  with socket.socket() as s:
+      # operații
+  # automat closed
+  ```
+
+### SLIDE 17: Mini-quiz interactiv
+- Întrebarea 1: Ce returnează accept()?
+  - A) Un întreg
+  - B) Un tuple (socket, adresă)
+  - C) Un string
+- Întrebarea 2: Cine folosește bind() obligatoriu?
+  - A) Clientul
+  - B) Serverul
+  - C) Ambii
+
+================================================================================
+SECȚIUNEA 3: TCP vs UDP (20 min)
+================================================================================
+
+### SLIDE 18: TCP - Transmission Control Protocol
+- Connection-oriented (handshake obligatoriu)
+- Reliable (garantează livrarea)
+- Ordered (ordinea e păstrată)
+- Flow control (fereastră glisantă)
+- Congestion control
+- Header: 20-60 bytes
+- Visual: Curier cu confirmare de primire
+
+### SLIDE 19: TCP Three-Way Handshake
+- Diagramă secvențială:
+  - Client → SYN → Server
+  - Client ← SYN-ACK ← Server
+  - Client → ACK → Server
+- Explicație fiecare pas
+- Sequence numbers inițiale (ISN)
+- Durată tipică: 1-3 RTT
+
+### SLIDE 20: TCP - Când să folosești?
+- ✓ Transferuri de fișiere (FTP, HTTP)
+- ✓ Email (SMTP, IMAP, POP3)
+- ✓ Web browsing (HTTP/HTTPS)
+- ✓ Baze de date remote
+- ✓ SSH, Telnet
+- Keywords: "Contează să ajungă tot, în ordine"
+
+### SLIDE 21: UDP - User Datagram Protocol
+- Connectionless (fără handshake)
+- Unreliable (best-effort delivery)
+- Unordered (pot ajunge în altă ordine)
+- No flow/congestion control
+- Header: doar 8 bytes
+- Visual: Poștă fără confirmare
+
+### SLIDE 22: UDP - Structura datagramei
+- Source Port (16 bits)
+- Destination Port (16 bits)
+- Length (16 bits)
+- Checksum (16 bits)
+- Data (variabil)
+- Total header: 8 bytes vs 20+ la TCP
+
+### SLIDE 23: UDP - Când să folosești?
+- ✓ Streaming video/audio
+- ✓ Gaming în timp real
+- ✓ DNS queries
+- ✓ VoIP
+- ✓ IoT sensors
+- Keywords: "Contează să ajungă repede, pierderea e tolerabilă"
+
+### SLIDE 24: Tabel comparativ TCP vs UDP
+| Caracteristică | TCP | UDP |
+|----------------|-----|-----|
+| Conexiune | Da | Nu |
+| Fiabilitate | Garantată | Best-effort |
+| Ordine | Păstrată | Negarantată |
+| Overhead | Mare (20B+) | Mic (8B) |
+| Latență | Mai mare | Mai mică |
+| Use case | Web, files | Streaming, DNS |
+
+### SLIDE 25: Vizualizare overhead
+- Grafic: Payload vs Header pentru 100 mesaje de 50 bytes
+- TCP: 100 × (50 + 20 + handshake) = ~9000 bytes overhead
+- UDP: 100 × (50 + 8) = 800 bytes overhead
+- Concluzie: UDP e 10x mai eficient pentru mesaje mici frecvente
+
+================================================================================
+SECȚIUNEA 4: MODELUL CLIENT-SERVER (15 min)
+================================================================================
+
+### SLIDE 26: Arhitectura Client-Server
+- Definiție: Client solicită, Server oferă
+- Caracteristici server: always-on, IP fix, scalabil
+- Caracteristici client: intermitent, IP dinamic, inițiază
+- Visual: Stea cu serverul în centru, clienți în jur
+
+### SLIDE 27: Fluxul tipic Client-Server
+- Diagramă de secvență:
+  1. Server: bind + listen (pregătire)
+  2. Client: connect (cerere conexiune)
+  3. Server: accept (acceptă conexiunea)
+  4. Ambii: send/recv (schimb de date)
+  5. Oricare: close (încheiere)
+
+### SLIDE 28: Server Iterativ vs Concurent
+- Iterativ: un client la un moment dat
+  - Simplu, dar nu scalează
+  - OK pentru prototipuri
+- Concurent: mai mulți clienți simultan
+  - Threading / Forking / Async
+  - Necesar pentru producție
+- Visual: Un ghișeu vs mai multe ghișee
+
+### SLIDE 29: Concurență cu Threading
+- Un thread per client
+- Avantaje: simplu conceptual
+- Dezavantaje: overhead, race conditions
+- Python: `threading.Thread(target=handle, args=(conn,))`
+- Cod schematic:
+  ```
+  while True:
+      conn, addr = server.accept()
+      Thread(target=handle, args=(conn,)).start()
+  ```
+
+### SLIDE 30: Gestionarea erorilor
+- SO_REUSEADDR: evită "Address already in use"
+- Timeout-uri: nu bloca la infinit
+- try/except: catch ConnectionResetError, BrokenPipe
+- Logging: înregistrează pentru debugging
+- Best practice: graceful shutdown
+
+================================================================================
+SECȚIUNEA 5: DEMONSTRAȚII ȘI PRACTICĂ (20 min)
+================================================================================
+
+### SLIDE 31: Demo 1 - TCP Echo Server
+- Cod live (sau captură de ecran cu highlight)
+- Pas cu pas:
+  1. Creăm socket
+  2. Setăm SO_REUSEADDR
+  3. Bind pe 0.0.0.0:8080
+  4. Listen cu backlog 5
+  5. Accept în buclă infinită
+  6. Echo: recv → send același lucru
+
+### SLIDE 32: Demo 2 - TCP Client
+- Cod live
+- Pas cu pas:
+  1. Creăm socket
+  2. Connect la server
+  3. Send mesaj
+  4. Recv răspuns
+  5. Print și close
+
+### SLIDE 33: Demo 3 - Observare cu netcat
+- `nc -l 8080` - server rapid
+- `nc localhost 8080` - client rapid
+- Trimitere mesaje interactive
+- Utilitate: debugging, testare rapidă
+
+### SLIDE 34: Demo 4 - Wireshark/tshark
+- Captură handshake TCP
+- Filtre: `tcp.port == 8080`
+- Observăm: SYN, SYN-ACK, ACK
+- Observăm: PSH-ACK pentru date
+- Screenshot cu highlight pe flags
+
+### SLIDE 35: Demo 5 - UDP simplu
+- Server UDP minimal
+- Client UDP minimal
+- Diferențe vizibile în cod:
+  - Nu există listen/accept
+  - recvfrom/sendto în loc de recv/send
+  - Fiecare mesaj e independent
+
+================================================================================
+SECȚIUNEA 6: ÎNCHEIERE ȘI PREGĂTIRE SEMINAR (5 min)
+================================================================================
+
+### SLIDE 36: Ce am învățat azi
+- ✓ Socket = endpoint de comunicare
+- ✓ TCP = fiabil, ordonat, overhead mare
+- ✓ UDP = rapid, simplu, best-effort
+- ✓ Client-server = arhitectură fundamentală
+- ✓ Concurență = necesar pentru scalabilitate
+
+### SLIDE 37: La ce ne ajută?
+- Web development: înțelegi ce face Flask/Django underneath
+- DevOps: debugging conexiuni, firewall rules
+- Microservicii: comunicare inter-servicii
+- IoT: senzori, protocoale custom
+- Career: fundament pentru orice rol tehnic
+
+### SLIDE 38: Pregătire pentru Seminar
+- Să aveți instalat: Python 3.8+, Wireshark/tshark
+- Să fi rulat: `make verify` în starterkit
+- Să citiți: README.md din kit
+- Să încercați: un Hello World cu socket
+
+### SLIDE 39: Resurse suplimentare
+- Python socket docs: docs.python.org/3/library/socket.html
+- Beej's Guide to Network Programming (clasic)
+- Wireshark User Guide
+- RFC 793 (TCP), RFC 768 (UDP)
+
+### SLIDE 40: Întrebări?
+- Contact: email cadru didactic
+- Office hours: [de completat]
+- Feedback: thumbs up/down pe chat
+- "La seminar aprofundăm cu exerciții practice!"
+
+================================================================================
+NOTE PENTRU PREZENTATOR
+================================================================================
+
+TIMING RECOMANDAT:
+- Secțiunea 1: 15 min
+- Secțiunea 2: 25 min
+- Secțiunea 3: 20 min
+- Secțiunea 4: 15 min
+- Secțiunea 5: 20 min
+- Secțiunea 6: 5 min
+- Total: ~100 min
+
+DEMO-URI LIVE:
+- Pregătește 2 terminale: server + client
+- Wireshark deschis cu filtru presetat
+- Backup: screenshots în caz de probleme tehnice
+
+ÎNTREBĂRI DE VERIFICARE:
+- După slide 17: quiz rapid
+- După slide 25: "Când ai folosi UDP pentru email?"
+- După slide 30: "Ce se întâmplă dacă uiți SO_REUSEADDR?"
+
+MATERIALE NECESARE:
+- Laptop cu Python 3.8+
+- Wireshark instalat
+- Starterkit S2 pregătit
+- Conexiune la internet (pentru demo-uri)

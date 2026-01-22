@@ -1,0 +1,280 @@
+# Outline Slide-uri Curs 1: Fundamentele Rețelelor
+# Format: Titlu slide | Bullet points principale | Note speaker
+
+================================================================================
+SECȚIUNEA 1: INTRODUCERE (5 minute)
+================================================================================
+
+SLIDE 1: Titlu
+- Rețele de Calculatoare - Curs 1
+- Fundamentele Rețelelor
+- [Logo ASE + Revolvix&Hypotheticalandrei]
+| Bun venit, prezentare structură curs
+
+SLIDE 2: Agenda
+- Ce vom învăța astăzi
+- Concepte fundamentale
+- Parametri de performanță
+- Dispozitive de rețea
+- Modele arhitecturale
+| 100 minute, pauză la jumătate
+
+SLIDE 3: De ce contează
+- Orice aplicație modernă = comunicare în rețea
+- Web, mobile, cloud, IoT
+- Debugging, optimizare, securitate
+- Fundament pentru dezvoltator
+| Motivația practică pentru programatori
+
+================================================================================
+SECȚIUNEA 2: CONCEPTE DE BAZĂ (30 minute)
+================================================================================
+
+SLIDE 4: Ce este o rețea?
+- Ansamblu de dispozitive interconectate
+- Noduri (hosts) + Legături (links)
+- Protocoale = reguli de comunicare
+- Servicii: partajare, comunicare
+| Definiție de bază
+
+SLIDE 5: Clasificare după dimensiune
+- PAN (Personal Area Network) < 10m
+- LAN (Local Area Network) - clădire
+- MAN (Metropolitan) - oraș
+- WAN (Wide Area Network) - global
+| Diagrama concentrice
+
+SLIDE 6: LAN vs WAN - Detalii
+- LAN: Ethernet, WiFi, viteză mare, administrare locală
+- WAN: Legături dedicate, ISP, latență mai mare
+- Internet = rețea de rețele
+| Tabel comparativ
+
+SLIDE 7: Topologii fizice
+- Stea: central hub/switch, ușor de administrat
+- Inel: circular, token passing
+- Bus: cablu comun, coliziuni
+- Plasă: redundanță, complexitate
+| Diagrame pentru fiecare
+
+SLIDE 8: Topologii - Avantaje/Dezavantaje
+- Stea: SPOF la centru, scalabilă
+- Inel: latență predictibilă, vulnerabil
+- Bus: simplu, domeniu coliziune mare
+- Plasă: robust, costisitor
+| Discuție tradeoff-uri
+
+SLIDE 9: Medii de transmisie
+- Ghidate: cupru, fibră optică
+- Neghidate: wireless (radio, infraroșu)
+- Proprietăți: bandwidth, atenuare, interferențe
+| Exemple practice
+
+SLIDE 10: Întrebare de verificare #1
+- Care topologie este cea mai rezistentă la defecte?
+- A) Stea  B) Bus  C) Plasă  D) Inel
+| Răspuns: C - Plasă
+
+================================================================================
+SECȚIUNEA 3: PARAMETRI DE PERFORMANȚĂ (20 minute)
+================================================================================
+
+SLIDE 11: Bandwidth (Lățime de bandă)
+- Capacitate maximă teoretică
+- Măsurată în bps (bits per second)
+- Ethernet: 10/100/1000 Mbps
+- Nu confundați cu throughput (real)
+| Diferența bandwidth vs throughput
+
+SLIDE 12: Latența (Delay)
+- Timp sursă → destinație
+- Componente: transmisie, propagare, procesare, coadă
+- RTT = Round-Trip Time
+| Formula și diagrama
+
+SLIDE 13: Delay de transmisie
+- D_trans = L / R
+- L = dimensiune pachet (biți)
+- R = rata legăturii (bps)
+- Exemplu: 1500B pe 1Gbps = 12μs
+| Calcul pas cu pas
+
+SLIDE 14: Delay de propagare
+- D_prop = d / s
+- d = distanță (metri)
+- s = viteză propagare (~2×10^8 m/s)
+- Exemplu: 1000km = 5ms
+| Viteza luminii în mediu
+
+SLIDE 15: Calculator interactiv (demo)
+- Input: dimensiune pachet, bandwidth, distanță
+- Output: delay transmisie, propagare, total
+| Demonstrație calculator din HTML
+
+SLIDE 16: Jitter și Packet Loss
+- Jitter = variație latentă
+- Critic pentru streaming, VoIP
+- Packet Loss = % pierdut
+- Cauze: congestie, erori, buffer overflow
+| Impactul asupra aplicațiilor
+
+SLIDE 17: Întrebare de verificare #2
+- Care componentă de delay depinde de bandwidth?
+- A) Propagare  B) Transmisie  C) Procesare
+| Răspuns: B - Transmisie
+
+================================================================================
+PAUZĂ (10 minute)
+================================================================================
+
+SLIDE 18: Pauză
+- 10 minute
+- Întrebări până acum?
+| 
+
+================================================================================
+SECȚIUNEA 4: DISPOZITIVE DE REȚEA (20 minute)
+================================================================================
+
+SLIDE 19: Stratificare dispozitive
+- Layer 1: Hub, Repeater (fizic)
+- Layer 2: Switch, Bridge (MAC)
+- Layer 3: Router (IP)
+- Layer 7: Firewall, Proxy
+| Diagrama stivă
+
+SLIDE 20: Hub vs Switch
+- Hub: broadcast la toate porturile
+- Switch: forwarding selectiv pe MAC
+- Switch = tabel de forwarding
+- Performance: switch >> hub
+| Diagrama comparativă
+
+SLIDE 21: Switch în detaliu
+- Învață adrese MAC automat
+- Forwarding pe baza tabelei
+- Domenii de coliziune separate
+- Full-duplex posibil
+| Animație learning process
+
+SLIDE 22: Router
+- Operează la Layer 3 (IP)
+- Interconectează rețele diferite
+- Tabele de rutare
+- Decrementează TTL
+| Diferența față de switch
+
+SLIDE 23: Tabel comparativ dispozitive
+- NIC → conectare host
+- Hub → regenerare semnal
+- Switch → comutare L2
+- Router → rutare L3
+- Firewall → filtrare
+| Tabel cu coloane
+
+SLIDE 24: Întrebare de verificare #3
+- Ce face un switch când primește un frame cu MAC necunoscut?
+- A) Drop  B) Flood  C) Forward port 1
+| Răspuns: B - Flood (broadcast)
+
+================================================================================
+SECȚIUNEA 5: MODELE ARHITECTURALE (20 minute)
+================================================================================
+
+SLIDE 25: De ce modele stratificate?
+- Complexitate redusă
+- Modularitate
+- Interschimbabilitate
+- Standarde clare
+| Analogia cu OSI model
+
+SLIDE 26: Modelul OSI
+- 7 niveluri
+- Referință teoretică
+- Fiecare nivel = serviciu specific
+- ISO standard
+| Tabel cu toate 7 niveluri
+
+SLIDE 27: OSI - Detalii niveluri 1-4
+- 1-Fizic: biți, cabluri
+- 2-Legătură: cadre, MAC
+- 3-Rețea: pachete, IP
+- 4-Transport: segmente, TCP/UDP
+| Focus pe primele 4
+
+SLIDE 28: OSI - Detalii niveluri 5-7
+- 5-Sesiune: conexiuni
+- 6-Prezentare: format, criptare
+- 7-Aplicație: HTTP, SMTP
+| În practică, adesea combinate
+
+SLIDE 29: Modelul TCP/IP
+- 4 niveluri practice
+- Derivat din ARPANET
+- Internet standard de facto
+- Aplicație, Transport, Internet, Acces rețea
+| Comparație cu OSI
+
+SLIDE 30: OSI vs TCP/IP
+- OSI: 7 niveluri, teoretic
+- TCP/IP: 4 niveluri, practic
+- Corespondența între ele
+- TCP/IP = ce se folosește real
+| Diagrama side-by-side
+
+SLIDE 31: Încapsularea datelor
+- Fiecare nivel adaugă header
+- Date → Segment → Pachet → Cadru
+- Decapsulare la destinație
+| Animație încapsulare
+
+SLIDE 32: Vizualizare încapsulare
+- [Eth Header][IP Header][TCP Header][Data][FCS]
+- MTU = Maximum Transmission Unit
+- Ethernet MTU = 1500 bytes
+| Diagrama detaliată
+
+SLIDE 33: Întrebare de verificare #4
+- Ce nivel adaugă adresa IP?
+- A) Transport  B) Rețea  C) Legătură  D) Aplicație
+| Răspuns: B - Rețea (Layer 3)
+
+================================================================================
+SECȚIUNEA 6: RECAPITULARE (10 minute)
+================================================================================
+
+SLIDE 34: Recapitulare
+- Rețele: noduri + legături + protocoale
+- Tipuri: LAN, WAN, Internet
+- Parametri: bandwidth, latență, jitter
+- Dispozitive: hub, switch, router
+- Modele: OSI, TCP/IP
+| Bullet points cheie
+
+SLIDE 35: Ce urmează
+- Seminar 1: netcat, tshark, captură
+- Curs 2: Modele arhitecturale în detaliu
+- Pregătire: instalare mediu, starterkit
+| Next steps
+
+SLIDE 36: Întrebări?
+- Întrebări și discuții
+- Contact: [email]
+- Resurse: [link starterkit]
+| 
+
+SLIDE 37: Bibliografie
+- Kurose & Ross - Computer Networking
+- Tanenbaum - Computer Networks
+- RFC-uri: 791 (IP), 793 (TCP)
+| 
+
+SLIDE 38: Final
+- Vă mulțumesc!
+- Săptămâna viitoare: Modele arhitecturale
+- Revolvix&Hypotheticalandrei
+| 
+
+================================================================================
+END OF OUTLINE
+================================================================================

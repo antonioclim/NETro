@@ -1,0 +1,46 @@
+# ============================================================
+# requirements.txt - Starterkit Săptămâna 2
+# Rețele de calculatoare - ASE București, CSIE
+# ============================================================
+# Python 3.9+ recomandat
+# Instalare: pip install -r requirements.txt
+# ============================================================
+
+# --- Core networking (stdlib, dar listate pentru documentare) ---
+# socket        - inclus în stdlib
+# threading     - inclus în stdlib
+# selectors     - inclus în stdlib
+
+# --- Analiza pachetelor ---
+scapy>=2.5.0                    # Manipulare pachete, sniffing
+
+# --- Utilitare pentru parsare și afișare ---
+pyshark>=0.6                    # Wrapper Python pentru tshark
+dpkt>=1.9.8                     # Parsare pcap fișiere
+
+# --- Networking avansat ---
+netifaces>=0.11.0               # Informații interfețe de rețea
+
+# --- Mininet (opțional - se instalează separat pe VM) ---
+# mininet                       # Se instalează cu apt, nu pip
+
+# --- Development și testing ---
+pytest>=7.0.0                   # Rulare teste
+pytest-timeout>=2.1.0           # Timeout pentru teste
+black>=23.0.0                   # Formatare cod
+flake8>=6.0.0                   # Linting
+
+# --- Logging și debugging ---
+colorlog>=6.7.0                 # Log-uri colorate
+
+# --- Documentație (opțional) ---
+# mkdocs>=1.4.0                 # Generare documentație
+
+# ============================================================
+# Note instalare Mininet (pe Ubuntu/Debian):
+# sudo apt-get install mininet
+# sudo apt-get install openvswitch-switch
+# 
+# Verificare:
+# sudo mn --test pingall
+# ============================================================

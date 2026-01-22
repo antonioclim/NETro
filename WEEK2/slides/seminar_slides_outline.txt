@@ -1,0 +1,352 @@
+# ============================================================
+# SEMINAR SLIDES OUTLINE - SĂPTĂMÂNA 2
+# Programare pe Socket-uri: TCP și UDP
+# ============================================================
+# Rețele de calculatoare - ASE București, CSIE
+# Target: ~45-50 minute seminar (22 slides efective)
+# Format: outline pentru import în PowerPoint/reveal.js
+# Revolvix&Hypotheticalandrei
+# ============================================================
+
+## SLIDE 1 - TITLU
+--------------------------------------------------
+### Seminar 2: Programare pe Socket-uri
+**Subtitlu:** Implementarea unui server concurent TCP și UDP + Analiza traficului
+**Footer:** Rețele de calculatoare | ASE CSIE | Săptămâna 2
+
+## SLIDE 2 - OBIECTIVE SEMINAR
+--------------------------------------------------
+### Ce vom realiza astăzi
+- [ ] Înțelegem API-ul socket în Python
+- [ ] Implementăm un server TCP concurent (threading)
+- [ ] Implementăm un server UDP cu protocol custom
+- [ ] Capturăm și analizăm traficul cu tshark/Wireshark
+- [ ] Comparăm overhead-ul TCP vs UDP
+**Timp estimat:** 110 minute (curs + laborator)
+
+## SLIDE 3 - RECAPITULARE DIN CURS
+--------------------------------------------------
+### Recapitulare: TCP vs UDP
+| Caracteristică | TCP | UDP |
+|----------------|-----|-----|
+| Conexiune | Orientat pe conexiune | Fără conexiune |
+| Fiabilitate | Garantată (ACK, retransmisii) | Negarantată |
+| Ordine | Păstrată | Negarantată |
+| Overhead | Mare (~20+ bytes/segment) | Mic (8 bytes) |
+| Handshake | 3-way (SYN, SYN-ACK, ACK) | Absent |
+**Concluzie:** TCP = fiabilitate, UDP = viteză
+
+## SLIDE 4 - CE ESTE UN SOCKET?
+--------------------------------------------------
+### Socket = Endpoint de comunicare
+**Definiție:** Interfață software între aplicație și stiva de protocoale
+**Analogie:** Socket = „priză" de rețea
+**Componentele unui socket:**
+- Adresă IP (local/remote)
+- Port (local/remote)
+- Protocol (TCP/UDP)
+**Tuple de identificare:** (IP_src, Port_src, IP_dst, Port_dst, Protocol)
+
+## SLIDE 5 - API-UL SOCKET ÎN PYTHON
+--------------------------------------------------
+### Modulul `socket` - Funcții esențiale
+```python
+import socket
+# Creare socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)   # UDP
+# Configurare
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(('0.0.0.0', 8080))
+# TCP specific
+s.listen(5)
+conn, addr = s.accept()
+# UDP specific
+data, addr = s.recvfrom(1024)
+```
+
+## SLIDE 6 - FLUXUL TCP SERVER
+--------------------------------------------------
+### Pașii unui server TCP
+```
+[1] socket()      → Creare socket
+[2] setsockopt()  → Configurare opțiuni (SO_REUSEADDR)
+[3] bind()        → Asociere cu adresă:port
+[4] listen()      → Trecere în modul pasiv
+[5] accept()      → Așteptare conexiune client
+[6] recv()/send() → Schimb de date
+[7] close()       → Închidere conexiune
+```
+**Diagrama:** [SVG cu flux vertical: socket → bind → listen → accept → recv/send → close]
+
+## SLIDE 7 - CONCURENȚĂ CU THREADING
+--------------------------------------------------
+### Problemă: Un singur client la un moment dat
+**Soluție:** Thread separat pentru fiecare client
+```python
+import threading
+def handle_client(conn, addr):
+    data = conn.recv(1024)
+    conn.sendall(data.upper())
+    conn.close()
+
+while True:
+    conn, addr = server_socket.accept()
+    t = threading.Thread(target=handle_client, args=(conn, addr))
+    t.daemon = True
+    t.start()
+```
+**Atenție:** daemon=True → thread-urile mor cu programul principal
+
+## SLIDE 8 - DEMO TCP SERVER
+--------------------------------------------------
+### Demo live: Server TCP Echo
+**Fișier:** `seminar/python/exercises/ex_2_01_tcp.py`
+**Comenzi:**
+```bash
+# Terminal 1 - Server
+python ex_2_01_tcp.py server --port 8080
+
+# Terminal 2 - Client
+python ex_2_01_tcp.py client --host 127.0.0.1 --message "Hello"
+
+# Alternativ: netcat
+echo "test" | nc localhost 8080
+```
+**Observații:** Fiecare client primește răspunsul UPPERCASE
+
+## SLIDE 9 - FLUXUL UDP SERVER
+--------------------------------------------------
+### Pașii unui server UDP (mai simplu!)
+```
+[1] socket()     → Creare socket SOCK_DGRAM
+[2] bind()       → Asociere cu adresă:port
+[3] recvfrom()   → Primire datagramă + adresă sursă
+[4] sendto()     → Trimitere răspuns către client
+[5] close()      → Închidere (opțional, la sfârșit)
+```
+**Diferență majoră:** Fără listen(), fără accept(), fără conexiune!
+
+## SLIDE 10 - PROTOCOL CUSTOM PESTE UDP
+--------------------------------------------------
+### Implementare protocol simplu
+**Comenzi suportate:**
+| Comandă | Descriere | Răspuns |
+|---------|-----------|---------|
+| PING | Test conectivitate | PONG |
+| UPPER:text | Conversie majuscule | text.upper() |
+| TIME | Timestamp server | HH:MM:SS |
+| ECHO:text | Ecou | text |
+```python
+if data.startswith(b"PING"):
+    response = b"PONG"
+elif data.startswith(b"UPPER:"):
+    response = data[6:].upper()
+```
+
+## SLIDE 11 - DEMO UDP SERVER
+--------------------------------------------------
+### Demo live: Server UDP Protocol
+**Fișier:** `seminar/python/exercises/ex_2_02_udp.py`
+**Comenzi:**
+```bash
+# Terminal 1 - Server
+python ex_2_02_udp.py server --port 9000
+
+# Terminal 2 - Client
+python ex_2_02_udp.py client --host 127.0.0.1 --command "PING"
+python ex_2_02_udp.py client --host 127.0.0.1 --command "UPPER:hello"
+python ex_2_02_udp.py client --host 127.0.0.1 --command "TIME"
+```
+
+## SLIDE 12 - INTRODUCERE WIRESHARK/TSHARK
+--------------------------------------------------
+### De ce analizăm traficul?
+- Debugging aplicații de rețea
+- Verificare protocol (handshake, payload)
+- Măsurare overhead
+- Detectare anomalii
+**Wireshark:** GUI - ideal pentru explorare
+**tshark:** CLI - ideal pentru automatizare și scripturi
+```bash
+# Captură simplă
+tshark -i lo -f "tcp port 8080" -c 20
+# Salvare în fișier
+tshark -i lo -f "tcp port 8080" -w capture.pcap
+```
+
+## SLIDE 13 - FILTRE BPF ESENȚIALE
+--------------------------------------------------
+### Berkeley Packet Filters (BPF)
+| Filtru | Descriere |
+|--------|-----------|
+| `tcp port 8080` | Trafic TCP pe portul 8080 |
+| `udp port 9000` | Trafic UDP pe portul 9000 |
+| `host 192.168.1.1` | Tot traficul de/către IP |
+| `src host X` | Doar de la sursă |
+| `dst port Y` | Doar către port destinație |
+| `tcp and port 80` | Combinare cu AND |
+| `tcp or udp` | Combinare cu OR |
+
+## SLIDE 14 - ANALIZA HANDSHAKE TCP
+--------------------------------------------------
+### Capturarea 3-Way Handshake
+```bash
+# Captură cu afișare flags
+tshark -i lo -f "tcp port 8080" -T fields \
+  -e frame.number -e ip.src -e ip.dst \
+  -e tcp.srcport -e tcp.dstport -e tcp.flags.str
+```
+**Output așteptat:**
+```
+1  127.0.0.1  127.0.0.1  54321  8080  ··········S·  (SYN)
+2  127.0.0.1  127.0.0.1  8080   54321  ·······A··S·  (SYN-ACK)
+3  127.0.0.1  127.0.0.1  54321  8080  ·······A····  (ACK)
+```
+
+## SLIDE 15 - INTERPRETARE FLAGS TCP
+--------------------------------------------------
+### Ce înseamnă fiecare flag?
+| Flag | Hex | Semnificație |
+|------|-----|--------------|
+| SYN | 0x0002 | Inițiere conexiune |
+| ACK | 0x0010 | Confirmare |
+| SYN-ACK | 0x0012 | Răspuns la SYN |
+| FIN | 0x0001 | Terminare conexiune |
+| RST | 0x0004 | Reset (eroare) |
+| PSH | 0x0008 | Push (livrare imediată) |
+**Observație:** În practică, PSH+ACK sunt frecvente pentru date
+
+## SLIDE 16 - COMPARAȚIE TCP VS UDP (CAPTURĂ)
+--------------------------------------------------
+### Experiment: Același mesaj, protocoale diferite
+**Scenariul:** Trimitem "HELLO" (5 bytes)
+| Metric | TCP | UDP |
+|--------|-----|-----|
+| Pachete (1 mesaj) | 7+ | 2 |
+| Bytes header | 66+ | 16 |
+| Latență setup | ~3ms | ~0ms |
+| Overhead % | ~92% | ~76% |
+**Concluzie:** UDP eficient pentru mesaje mici, unice
+
+## SLIDE 17 - MININET - INTRODUCERE
+--------------------------------------------------
+### Mininet = Simulator SDN
+**De ce Mininet?**
+- Topologii virtuale complete
+- Testare scenarii reale (delay, loss, bandwidth)
+- Integrare cu tshark
+**Topologie de bază (S2):**
+```
+   h1 ----+
+          |
+   h2 ----+---- s1 (switch)
+          |
+   h3 ----+
+```
+**Fișier:** `seminar/mininet/topologies/topo_2_base.py`
+
+## SLIDE 18 - COMENZI MININET
+--------------------------------------------------
+### Comenzi esențiale CLI Mininet
+```bash
+# Lansare topologie
+sudo python topo_2_base.py
+
+# În CLI Mininet
+mininet> nodes        # Lista noduri
+mininet> net          # Conexiuni
+mininet> pingall      # Test conectivitate
+mininet> h1 ifconfig  # Comandă pe h1
+mininet> h1 python server.py &
+mininet> h2 python client.py --host 10.0.0.1
+mininet> exit
+```
+**Curățare:** `sudo mn -c`
+
+## SLIDE 19 - EXERCIȚIU GHIDAT 1
+--------------------------------------------------
+### Exercițiu: TCP Echo Server Template
+**Task:** Completați template-ul `tcp_server_template.py`
+**TODOs:**
+1. Creare socket (`socket.socket(...)`)
+2. Setare SO_REUSEADDR
+3. Bind pe port 8080
+4. Listen cu backlog 5
+5. Loop accept → threading
+**Verificare:**
+```bash
+echo "test" | nc localhost 8080
+# Așteptat: TEST
+```
+
+## SLIDE 20 - EXERCIȚIU GHIDAT 2
+--------------------------------------------------
+### Exercițiu: Extindere protocol UDP
+**Task:** Adăugați comenzi noi în `ex_2_02_udp.py`
+**Comenzi de implementat:**
+- `REVERSE:text` → Returnează textul inversat
+- `COUNT:text` → Returnează numărul de caractere
+- `HASH:text` → Returnează hash MD5 (primii 8 chars)
+**Hint:**
+```python
+import hashlib
+hashlib.md5(text.encode()).hexdigest()[:8]
+```
+
+## SLIDE 21 - GREȘELI FRECVENTE
+--------------------------------------------------
+### Top 5 erori și soluții
+| Eroare | Cauză | Soluție |
+|--------|-------|---------|
+| `Address already in use` | Port ocupat | `SO_REUSEADDR` sau `lsof -i :port` |
+| `ConnectionRefused` | Server oprit | Verifică cu `ss -tlnp` |
+| `TypeError: bytes` | String vs bytes | `.encode()` / `.decode()` |
+| `socket.timeout` | UDP fără răspuns | Crește timeout sau verifică firewall |
+| `BrokenPipeError` | Client deconectat | `try/except` în handle_client |
+
+## SLIDE 22 - CONSOLIDARE ȘI CONCLUZIE
+--------------------------------------------------
+### Ce am învățat
+- [x] API socket Python: TCP (SOCK_STREAM) vs UDP (SOCK_DGRAM)
+- [x] Server TCP concurent cu threading
+- [x] Server UDP cu protocol custom
+- [x] Captură și analiză cu tshark
+- [x] Diferențe overhead TCP/UDP
+- [x] Topologii Mininet de bază
+**Legătură cu proiectul:** Modulul client-server cu minim 3 comenzi
+
+## SLIDE 23 - PREVIEW SĂPTĂMÂNA 3
+--------------------------------------------------
+### Săptămâna viitoare: Broadcast și Multicast
+- UDP Broadcast: comunicare 1-la-toți
+- UDP Multicast: comunicare 1-la-grup
+- TCP Tunnel simplu
+- Scenarii Mininet cu multiple switch-uri
+**Pregătire:** Recapitulați adresele IP speciale (broadcast, multicast ranges)
+
+## SLIDE 24 - RESURSE ȘI BIBLIOGRAFIE
+--------------------------------------------------
+### Resurse pentru aprofundare
+- Python socket HOWTO: https://docs.python.org/3/howto/sockets.html
+- Wireshark User Guide: https://www.wireshark.org/docs/
+- Mininet Walkthrough: http://mininet.org/walkthrough/
+- Kurose & Ross, Ch. 2.7 (Socket Programming)
+**În starterkit:**
+- `docs/seminar.md` - Ghid complet seminar
+- `docs/lab.md` - Pași laborator
+- `seminar.html` - Versiune interactivă
+
+# ============================================================
+# NOTE PENTRU INSTRUCTOR
+# ============================================================
+# Timing recomandat:
+# - Slides 1-5: 10 min (introducere)
+# - Slides 6-8: 15 min (TCP demo)
+# - Slides 9-11: 10 min (UDP demo)
+# - Slides 12-16: 15 min (Wireshark)
+# - Slides 17-18: 10 min (Mininet)
+# - Slides 19-20: 25 min (exerciții)
+# - Slides 21-24: 5 min (consolidare)
+# Total: ~90 minute
+# ============================================================
