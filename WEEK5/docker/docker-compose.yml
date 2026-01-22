@@ -1,0 +1,82 @@
+# docker-compose.yml — Starterkit Săptămâna 5
+# =============================================
+# Orchestrare containere pentru demonstrații rețea
+#
+# Utilizare:
+#   docker-compose up -d              # Pornire servicii
+#   docker-compose exec python bash   # Shell în container
+#   docker-compose down               # Oprire servicii
+#
+# NOTĂ: Acesta este un setup simplificat pentru exercițiile Python.
+#       Pentru Mininet complet, folosiți VM cu Linux.
+
+version: '3.8'
+
+services:
+  # Container principal pentru exerciții Python
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: starterkit-s5-python
+    hostname: python-node
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../python:/app/python:ro
+      - ../docs:/app/docs:ro
+      - ../pcap:/app/pcap
+    networks:
+      labnet:
+        ipv4_address: 10.5.0.10
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: bash
+
+  # Server UDP Echo pentru demo
+  udp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: starterkit-s5-udp-server
+    hostname: udp-server
+    volumes:
+      - ../python:/app/python:ro
+    networks:
+      labnet:
+        ipv4_address: 10.5.0.20
+    ports:
+      - "9999:9999/udp"
+    command: python3 /app/python/apps/udp_echo.py server --port 9999 --verbose
+
+  # Client UDP Echo pentru demo
+  udp-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: starterkit-s5-udp-client
+    hostname: udp-client
+    volumes:
+      - ../python:/app/python:ro
+    networks:
+      labnet:
+        ipv4_address: 10.5.0.30
+    depends_on:
+      - udp-server
+    # Trimite 5 mesaje către server
+    command: >
+      bash -c "sleep 2 && python3 /app/python/apps/udp_echo.py client 
+        --host 10.5.0.20 --port 9999 --count 5 --message 'Hello from Docker!'"
+
+# Rețea personalizată pentru demonstrații
+networks:
+  labnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
+          gateway: 10.5.0.1
+
+# Notă: Pentru capturi pcap din containere
+# docker-compose exec python tcpdump -i eth0 -w /app/pcap/capture.pcap

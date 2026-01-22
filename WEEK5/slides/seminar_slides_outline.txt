@@ -1,0 +1,302 @@
+# SEMINAR 5: Adresare și Rutare — Subnetting, IPv4, IPv6, Simulator Rețea
+# Outline Slide-uri pentru PowerPoint/reveal.js
+# Durată estimată: 2 ore (100 minute + 20 minute exerciții individuale)
+#===============================================================================
+
+[SLIDE 1] Titlu
+---------------
+- Titlu: "Seminar 5: Adresare și Rutare"
+- Subtitlu: "Subnetting, IPv4, IPv6, Mininet"
+- Autor: ASE-CSIE
+- Data: Săptămâna 5
+
+[SLIDE 2] Agenda Seminar
+------------------------
+1. Recapitulare concepte teoretice (15 min)
+2. Exerciții CIDR și calculatoare (20 min)
+3. FLSM: Partițonare uniformă (15 min)
+4. VLSM: Alocare eficientă (20 min)
+5. IPv6: Comprimare și expandare (15 min)
+6. Mininet: Topologie simulată (25 min)
+7. Recapitulare și teme (10 min)
+
+[SLIDE 3] Obiective Seminar
+---------------------------
+La finalul seminarului, studentul va putea:
+- Calcula parametrii oricărei rețele CIDR
+- Partiționa o rețea folosind FLSM
+- Planifica adresare VLSM pentru cerințe reale
+- Comprima și expanda adrese IPv6
+- Configura o topologie de rețea în Mininet
+
+[SLIDE 4] Instrumente Utilizate
+-------------------------------
+- Python 3.x + modulul ipaddress (stdlib)
+- Mininet + Open vSwitch
+- tshark pentru captură pachete
+- Terminal Linux (VM sau WSL)
+- Kit: starterkit_s5.zip
+
+[SLIDE 5] Recapitulare: Structura IPv4
+--------------------------------------
+- 32 biți = 4 octeți
+- Notație dotted decimal: A.B.C.D
+- Notație CIDR: A.B.C.D/n (n = biți rețea)
+- Mască = secvență de n biți 1, apoi (32-n) biți 0
+- Exemplu: /24 → 255.255.255.0
+
+[SLIDE 6] Recapitulare: Formule Esențiale
+-----------------------------------------
+| Parametru         | Formulă                      |
+|-------------------|------------------------------|
+| Adresă rețea      | IP AND mască                 |
+| Broadcast         | Rețea OR wildcard            |
+| Wildcard          | NOT mască (inversul)         |
+| Nr. gazde         | 2^(32-prefix) - 2            |
+| Prima gazdă       | Rețea + 1                    |
+| Ultima gazdă      | Broadcast - 1                |
+
+[SLIDE 7] Demo Python: Modul ipaddress
+--------------------------------------
+```python
+from ipaddress import ip_network, ip_address
+net = ip_network('192.168.1.0/24', strict=False)
+print(f"Rețea: {net.network_address}")
+print(f"Broadcast: {net.broadcast_address}")
+print(f"Mască: {net.netmask}")
+print(f"Gazde: {net.num_addresses - 2}")
+```
+
+[SLIDE 8] Exercițiu 1: Analiză CIDR
+-----------------------------------
+- Problemă: Analizați 10.45.128.200/18
+- Calculați:
+  - Adresa de rețea
+  - Adresa de broadcast
+  - Prima și ultima gazdă
+  - Numărul de gazde utilizabile
+- Timp: 5 minute
+- Verificare: python ex_5_01 analyze 10.45.128.200/18
+
+[SLIDE 9] Soluție Exercițiu 1
+-----------------------------
+- IP: 10.45.128.200/18
+- Mască: 255.255.192.0 (18 biți de 1)
+- Rețea: 10.45.128.0 (AND logic)
+- Broadcast: 10.45.191.255 (biți host pe 1)
+- Prima gazdă: 10.45.128.1
+- Ultima gazdă: 10.45.191.254
+- Nr. gazde: 2^14 - 2 = 16382
+
+[SLIDE 10] FLSM: Când și De ce?
+-------------------------------
+- Fixed-Length Subnet Mask
+- Când: Departamente egale, simplitate administrativă
+- Avantaje: Ușor de calculat, predictibil
+- Dezavantaje: Poate irosi adrese
+- Formula: 2^n subrețele, unde n = biți împrumutați
+
+[SLIDE 11] Exercițiu 2: FLSM
+----------------------------
+- Problemă: Împărțiți 172.30.0.0/20 în 32 subrețele
+- Calculați:
+  - Câți biți împrumutați?
+  - Care este noul prefix?
+  - Primele 5 subrețele
+- Timp: 5 minute
+- Verificare: python ex_5_01 flsm 172.30.0.0/20 32
+
+[SLIDE 12] Soluție Exercițiu 2
+------------------------------
+- Biți împrumutați: log₂(32) = 5
+- Prefix nou: /20 + 5 = /25
+- Gazde per subrețea: 2^7 - 2 = 126
+- Subrețele:
+  - 172.30.0.0/25 (0-127)
+  - 172.30.0.128/25 (128-255)
+  - 172.30.1.0/25 (256-383)
+  - 172.30.1.128/25 (384-511)
+  - 172.30.2.0/25 (512-639)
+
+[SLIDE 13] VLSM: Eficiență Maximă
+---------------------------------
+- Variable-Length Subnet Mask
+- Algoritm:
+  1. Sortează cerințele descrescător
+  2. Calculează prefixul minim pentru fiecare
+  3. Alocă secvențial, fără suprapunere
+- Avantaj: Utilizare optimă a spațiului
+- Pericol: Erori de suprapunere!
+
+[SLIDE 14] Exercițiu 3: VLSM
+----------------------------
+- Problemă: Planificați 192.168.50.0/24 pentru:
+  - Departament A: 100 gazde
+  - Departament B: 50 gazde
+  - Departament C: 20 gazde
+  - Link P2P: 2 gazde
+  - Rezervă: 10 gazde
+- Timp: 8 minute
+
+[SLIDE 15] Soluție Exercițiu 3
+------------------------------
+| Cerință | Prefix | Alocare               | Eficiență |
+|---------|--------|-----------------------|-----------|
+| 100     | /25    | 192.168.50.0/25       | 79.4%     |
+| 50      | /26    | 192.168.50.128/26     | 80.6%     |
+| 20      | /27    | 192.168.50.192/27     | 66.7%     |
+| 10      | /28    | 192.168.50.224/28     | 71.4%     |
+| 2       | /30    | 192.168.50.240/30     | 100%      |
+- Total alocat: 192/256 = 75%
+- Disponibil: .244-.255
+
+[SLIDE 16] IPv6: Structura
+--------------------------
+- 128 biți = 8 grupuri × 16 biți
+- Notație: hexazecimal cu : (două puncte)
+- Exemplu complet:
+  2001:0db8:85a3:0000:0000:8a2e:0370:7334
+- Prefix tipic: /64 pentru LAN
+
+[SLIDE 17] IPv6: Reguli de Comprimare
+-------------------------------------
+1. Elimină zerourile de început din fiecare grup
+   - 0db8 → db8, 0001 → 1
+2. O singură secvență de grupuri :0000: → ::
+   - Doar o dată per adresă!
+3. Exemplu:
+   - Înainte: 2001:0db8:0000:0000:0000:0000:0000:0001
+   - După: 2001:db8::1
+
+[SLIDE 18] Exercițiu 4: IPv6 Comprimare
+---------------------------------------
+Comprimați adresele:
+1. 2001:0db8:0000:0042:0000:0000:0000:0001
+2. fe80:0000:0000:0000:020c:29ff:fe12:3456
+3. 0000:0000:0000:0000:0000:0000:0000:0001
+- Timp: 3 minute
+- Verificare: python ex_5_02 compress ...
+
+[SLIDE 19] Soluție Exercițiu 4
+------------------------------
+1. 2001:0db8:0000:0042:0000:0000:0000:0001
+   → 2001:db8:0:42::1
+2. fe80:0000:0000:0000:020c:29ff:fe12:3456
+   → fe80::20c:29ff:fe12:3456
+3. 0000:0000:0000:0000:0000:0000:0000:0001
+   → ::1 (loopback)
+
+[SLIDE 20] Exercițiu 5: IPv6 Expandare
+--------------------------------------
+Expandați adresele:
+1. 2001:db8::1
+2. fe80::1
+3. ::ffff:192.168.1.1 (IPv4-mapped)
+- Timp: 3 minute
+- Verificare: python ex_5_02 expand ...
+
+[SLIDE 21] Soluție Exercițiu 5
+------------------------------
+1. 2001:db8::1
+   → 2001:0db8:0000:0000:0000:0000:0000:0001
+2. fe80::1
+   → fe80:0000:0000:0000:0000:0000:0000:0001
+3. ::ffff:192.168.1.1
+   → 0000:0000:0000:0000:0000:ffff:c0a8:0101
+
+[SLIDE 22] Mininet: Introducere
+-------------------------------
+- Simulator de rețea în spațiul utilizator
+- Creează hosturi, switchuri, routere virtuale
+- Utilizează namespace-uri Linux
+- Integrare cu Open vSwitch și POX/Ryu
+- Perfect pentru învățare și testare
+
+[SLIDE 23] Demo Mininet: Topologie Simplă
+-----------------------------------------
+```bash
+# Pornire topologie de bază
+sudo python topo_5_base.py --cli
+# Comenzi în CLI:
+mininet> nodes
+mininet> net
+mininet> h1 ip addr
+mininet> h1 ping -c 3 h2
+mininet> h1 traceroute h2
+```
+
+[SLIDE 24] Exercițiu 6: Topologie Mininet
+-----------------------------------------
+- Porniți topologia extinsă cu VLSM
+- Verificați conectivitatea între toate hosturile
+- Capturați pachete ICMP cu tcpdump
+- Analizați TTL în răspunsurile ping
+- Timp: 15 minute
+- Comandă: sudo python topo_5_extended.py --cli
+
+[SLIDE 25] Verificări Mininet
+-----------------------------
+```bash
+# În CLI Mininet:
+h1 ping -c 1 h2    # Verifică rută directă
+h1 ping -c 1 h3    # Verifică rută prin router
+h1 traceroute h3   # Vezi hopurile
+# Într-un alt terminal:
+sudo tcpdump -i s1-eth1 icmp -w capture.pcap
+```
+
+[SLIDE 26] Debugging Mininet
+----------------------------
+Probleme frecvente:
+- "Network is unreachable" → Verifică rutele: ip route
+- "Destination Host Unreachable" → Verifică ARP: arp -n
+- Timeout → Verifică IP forwarding pe router
+- Cleanup: sudo mn -c
+
+[SLIDE 27] Exercițiu Challenge
+------------------------------
+- Planificați adresare IPv6 pentru:
+  - O organizație cu prefixul 2001:db8:cafe::/48
+  - 16 departamente, fiecare cu /64
+  - Documentați primele 5 și ultimele 2 subrețele
+- Bonus: Implementați în topo_5_extended.py
+
+[SLIDE 28] Recapitulare Seminar
+-------------------------------
+- CIDR: IP/prefix → toate parametrele calculabile
+- FLSM: Subrețele egale, simplu dar poate irosi
+- VLSM: Sortare descrescătoare, alocare optimă
+- IPv6: Comprimare cu :: (o singură dată)
+- Mininet: Simulator pentru testare și învățare
+
+[SLIDE 29] Teme Seminar
+-----------------------
+1. Completați exercițiile S5.1-S5.5 din seminar.md
+2. Realizați exercițiul challenge S5.6
+3. Documentați topologia Mininet cu VLSM
+4. Pregătiți artefactul săptămânii pentru proiect
+
+[SLIDE 30] Contribuție Proiect Echipă
+-------------------------------------
+- Artefact săptămâna 5: Schema de adresare
+- Include:
+  - Tabel VLSM cu 3+ subrețele justificate
+  - Diagramă topologie (poate fi ASCII/text)
+  - Fișier Mininet funcțional (opțional)
+- Deadline: Înainte de seminarul 6
+
+[SLIDE 31] Bibliografie Seminar
+-------------------------------
+- RFC 4632: CIDR
+- RFC 4291: IPv6 Addressing Architecture
+- RFC 5952: IPv6 Address Text Representation
+- Kurose & Ross: Computer Networking, Cap. 4
+- Documentație Mininet: mininet.org
+
+[SLIDE 32] Întrebări?
+---------------------
+- Contact: [email cadru didactic]
+- Materiale: Platforma e-learning
+- Suport tehnic: Laborator rețele
+
+# Sfârșit outline seminar

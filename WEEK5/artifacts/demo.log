@@ -1,0 +1,76 @@
+# Demo Log - Săptămâna 5: Adresare IP
+# Generat: Fri Jan  2 10:20:34 UTC 2026
+# Network Base: 10.0.5.0/24
+# Week Port Base: 5500
+
+[2026-01-02 10:20:34] [INFO] Directoare și fișiere inițializate
+[2026-01-02 10:20:34] [INFO] Log: /home/claude/artifacts/demo.log
+[2026-01-02 10:20:34] [INFO] PCAP: /home/claude/artifacts/demo.pcap
+[2026-01-02 10:20:34] [INFO] Validare: /home/claude/artifacts/validation.txt
+[2026-01-02 10:20:34] [TITLE] Verificare Mediu
+[2026-01-02 10:20:34] [OK] Python: Python 3.12.3
+[2026-01-02 10:20:34] [OK] Modul ipaddress disponibil
+[2026-01-02 10:20:34] [WARN] Mininet nu este instalat (demo parțial)
+[2026-01-02 10:20:34] [WARN] tcpdump nu este instalat (captură simulată)
+[2026-01-02 10:20:34] [TITLE] Demo Rapid (CIDR + VLSM)
+[2026-01-02 10:20:34] [INFO] CIDR: 192.168.10.14/26
+
+══════════════════════════════════════════════════
+  Analiză CIDR IPv4
+══════════════════════════════════════════════════
+
+  Input:                         192.168.10.14/26
+  Adresă IP:                     192.168.10.14
+  Tip adresă:                    HOST
+
+  Adresă de rețea:               192.168.10.0/26
+  Mască de rețea:                255.255.255.192
+  Wildcard mask:                 0.0.0.63
+  Adresă broadcast:              192.168.10.63
+
+  Total adrese:                  64
+  Hosturi utilizabile:           62
+  Primul host:                   192.168.10.1
+  Ultimul host:                  192.168.10.62
+
+  Adresă privată:                Da
+
+[2026-01-02 10:20:35] [INFO] VLSM: 172.16.0.0/24 pentru 60, 20, 10, 2
+
+══════════════════════════════════════════════════════════════════════
+  Alocare VLSM (Variable Length Subnet Mask)
+══════════════════════════════════════════════════════════════════════
+
+  Rețea disponibilă:             172.16.0.0/24
+  Total adrese:                  256
+  Cerințe hosturi:               60, 20, 10, 2
+
+──────────────────────────────────────────────────────────────────────
+  Algoritmul VLSM:
+──────────────────────────────────────────────────────────────────────
+  1. Sortăm cerințele descrescător
+  2. Pentru fiecare cerință, calculăm prefixul minim necesar
+  3. Aliniem adresa de start la granița blocului
+  4. Alocăm și avansăm cursorul
+
+──────────────────────────────────────────────────────────────────────
+    #   Necesar   Prefix  Subrețea             Gateway          Eficiență
+──────────────────────────────────────────────────────────────────────
+    1        60  /26      172.16.0.0/26        172.16.0.1        96.8%
+    2        20  /27      172.16.0.64/27       172.16.0.65       66.7%
+    3        10  /28      172.16.0.96/28       172.16.0.97       71.4%
+    4         2  /30      172.16.0.112/30      172.16.0.113     100.0%
+──────────────────────────────────────────────────────────────────────
+
+  Rezumat:
+    Total hosturi necesare:   92
+    Total hosturi alocate:    108
+    Eficiență globală:        85.2%
+    Adrese rămase libere:     140
+    Prima adresă liberă:      172.16.0.116
+
+[2026-01-02 10:20:35] [INFO] Generare captură PCAP simulată...
+[2026-01-02 10:20:35] [OK] PCAP simulat generat (demonstrativ)
+[2026-01-02 10:20:35] [TITLE] Generare Raport Validare
+[2026-01-02 10:20:36] [OK] Raport validare generat: /home/claude/artifacts/validation.txt
+[2026-01-02 10:20:36] [OK] Demo rapid finalizat

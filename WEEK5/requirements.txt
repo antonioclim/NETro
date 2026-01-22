@@ -1,0 +1,23 @@
+# Dependențe Python — Starterkit Săptămâna 5
+# ===========================================
+# Majoritatea funcționalității folosește biblioteca standard Python.
+# Aceste pachete sunt opționale pentru funcționalități extinse.
+
+# Nicio dependență externă obligatorie!
+# Modulele folosite (ipaddress, argparse, json, dataclasses, socket, math)
+# sunt parte din biblioteca standard Python 3.10+
+
+# Opțional: pentru dezvoltare și testare
+# pytest>=7.0.0          # Pentru teste unitare (opțional)
+# pytest-cov>=4.0.0      # Pentru coverage (opțional)
+
+# Opțional: pentru generare documentație
+# mkdocs>=1.4.0          # Documentație Markdown (opțional)
+# mkdocs-material>=9.0.0 # Temă Material (opțional)
+
+# Opțional: pentru Jupyter notebooks
+# jupyter>=1.0.0         # Notebooks interactive (opțional)
+# matplotlib>=3.6.0      # Vizualizări (opțional)
+
+# Notă: Mininet nu se instalează via pip!
+# Instalare Mininet: sudo apt-get install mininet

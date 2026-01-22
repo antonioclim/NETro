@@ -1,0 +1,331 @@
+# CURS 5: Nivelul Rețea — Adresare IPv4, IPv6, Subnetting, VLSM
+# Outline Slide-uri pentru PowerPoint/reveal.js
+# Durată estimată: 2 ore (100 minute + 20 minute pauze/întrebări)
+#===============================================================================
+
+[SLIDE 1] Titlu
+---------------
+- Titlu: "Nivelul Rețea: Adresare IP și Subnetting"
+- Subtitlu: "Curs 5 — Rețele de Calculatoare"
+- Autor: ASE-CSIE
+- Data: Săptămâna 5
+
+[SLIDE 2] Agenda
+----------------
+1. Recapitulare: Nivelul legătură de date
+2. Rolul nivelului rețea în stiva TCP/IP
+3. Structura adresei IPv4
+4. Notația CIDR și măști de rețea
+5. Subnetting: FLSM și VLSM
+6. Introducere în IPv6
+7. Demonstrații practice
+8. Întrebări și recapitulare
+
+[SLIDE 3] Ce vei ști după curs
+------------------------------
+- Cum funcționează adresarea la nivelul rețea
+- De ce e importantă segmentarea rețelelor
+- Cum să calculezi parametrii unei subrețele
+- Diferența dintre FLSM și VLSM
+- Bazele adresării IPv6
+
+[SLIDE 4] De ce contează
+------------------------
+- Orice aplicație distribuită depinde de adresare corectă
+- Cloud computing: izolarea tenant-urilor prin subrețele
+- Securitate: segmentarea limitează suprafața de atac
+- Eficiență: utilizarea optimă a spațiului de adrese
+- Diagrama: Aplicație → Transport → REȚEA → Legătură → Fizic
+
+[SLIDE 5] Recapitulare: MAC vs IP
+---------------------------------
+- MAC: identificare fizică, locală (Layer 2)
+- IP: identificare logică, globală (Layer 3)
+- Tabel comparativ:
+  | Caracteristică | MAC          | IP            |
+  |----------------|--------------|---------------|
+  | Nivel OSI      | 2            | 3             |
+  | Scope          | Local (LAN)  | Global (WAN)  |
+  | Schimbare      | Fix          | Configurabil  |
+  | Rutare         | Nu           | Da            |
+
+[SLIDE 6] Rolul nivelului rețea
+-------------------------------
+- Adresare logică (IP addresses)
+- Rutare (determinarea căii)
+- Fragmentare și reasamblare
+- Controlul congestiei
+- Diagrama: Router conectând multiple rețele
+
+[SLIDE 7] Analogie: Adresa IP ca adresa poștală
+-----------------------------------------------
+- Partea de rețea = orașul și strada
+- Partea de host = numărul casei
+- Masca de rețea = dimensiunea cartierului
+- Broadcast = megafonul cartierului
+- Ilustrație cu case și străzi
+
+[SLIDE 8] Structura adresei IPv4
+--------------------------------
+- 32 de biți organizați în 4 octeți
+- Notație dotted decimal: 192.168.1.100
+- Porțiunea de rețea vs porțiunea de host
+- Vizualizare grafică biți: [NNNNNNNN.NNNNNNNN.NNNNNNNN.HHHHHHHH]
+
+[SLIDE 9] Header-ul IPv4
+------------------------
+- Diagrama header (20-60 bytes):
+  - Version (4 bits)
+  - IHL (4 bits)
+  - ToS (8 bits)
+  - Total Length (16 bits)
+  - TTL, Protocol, Header Checksum
+  - Source Address (32 bits)
+  - Destination Address (32 bits)
+
+[SLIDE 10] Clase de adrese (Istoric)
+------------------------------------
+- Clasa A: 0.0.0.0 – 127.255.255.255 (/8)
+- Clasa B: 128.0.0.0 – 191.255.255.255 (/16)
+- Clasa C: 192.0.0.0 – 223.255.255.255 (/24)
+- IMPORTANT: Sistemul claselor este ÎNVECHIT → CIDR
+
+[SLIDE 11] CIDR — Classless Inter-Domain Routing
+------------------------------------------------
+- RFC 4632 (1993)
+- Notație: IP/prefix (ex: 192.168.1.0/24)
+- Prefix = numărul de biți pentru rețea
+- Permite orice lungime de prefix
+- Avantaj: Utilizare eficientă a spațiului de adrese
+
+[SLIDE 12] Masca de rețea
+-------------------------
+- Biții de rețea cu 1, biții de host cu 0
+- /24 → 255.255.255.0 → 11111111.11111111.11111111.00000000
+- Tabel conversii comune: /30, /28, /27, /26, /25, /24...
+
+[SLIDE 13] Calculul adresei de rețea
+------------------------------------
+- Operație AND bit cu bit între IP și mască
+- Exemplu: 192.168.1.100/24
+  ```
+  192.168.1.100 = 11000000.10101000.00000001.01100100
+  255.255.255.0 = 11111111.11111111.11111111.00000000
+  ────────────────────────────────────────────────────
+  Rețea         = 11000000.10101000.00000001.00000000 = 192.168.1.0
+  ```
+
+[SLIDE 14] Calculul broadcast-ului
+----------------------------------
+- Toți biții de host setați pe 1
+- Wildcard mask = inversul măștii de rețea
+- Exemplu: 192.168.1.0/24
+  - Wildcard: 0.0.0.255
+  - Broadcast = Rețea OR Wildcard = 192.168.1.255
+
+[SLIDE 15] 🗳️ PEER INSTRUCTION: Număr de hosturi
+-------------------------------------------------
+Scenariu: Ai rețeaua 192.168.10.0/26
+
+Întrebare: Câte dispozitive poți conecta efectiv?
+
+A) 64
+B) 62
+C) 256
+D) 30
+
+[INSTRUCȚIUNI: Vot → Discuție 3 min → Revot → Explicație]
+
+[SLIDE 16] Interval gazde valide
+--------------------------------
+- Prima gazdă: adresa de rețea + 1
+- Ultima gazdă: broadcast - 1
+- Număr gazde: 2^(32-prefix) - 2
+- Exemplu /24: 254 gazde valide
+- Exemplu /30: 2 gazde valide (link point-to-point)
+
+[SLIDE 17] Exercițiu interactiv #1
+----------------------------------
+- Problemă: Pentru 172.16.50.12/21, calculează:
+  - Adresa de rețea
+  - Adresa de broadcast
+  - Prima și ultima gazdă
+- PREDICȚIE: Notează răspunsul tău!
+- Pauză 2 minute pentru rezolvare
+- Soluție pas cu pas
+
+[SLIDE 18] Subnetting — De ce?
+------------------------------
+- Organizare logică a rețelei
+- Izolare trafic (broadcast domains)
+- Securitate (ACL-uri pe subrețele)
+- Eficiență utilizare adrese
+- Diagrama: O rețea /16 împărțită în /24-uri
+
+[SLIDE 19] FLSM — Fixed-Length Subnet Mask
+------------------------------------------
+- Analogie: Pizza tăiată în felii egale
+- Toate subrețelele au aceeași dimensiune
+- Formula: 2^n subrețele, unde n = biți împrumutați
+- Dezavantaj: poate irosi adrese
+
+[SLIDE 20] Exemplu FLSM
+-----------------------
+- Rețea: 10.10.0.0/16, necesare 4 subrețele
+- Biți împrumutați: 2 (2^2 = 4)
+- Prefix nou: /18
+- Subrețele:
+  - 10.10.0.0/18
+  - 10.10.64.0/18
+  - 10.10.128.0/18
+  - 10.10.192.0/18
+
+[SLIDE 21] VLSM — Variable-Length Subnet Mask
+---------------------------------------------
+- Analogie: Pizza tăiată în porții diferite
+- Subrețele de dimensiuni diferite
+- Adaptate la cerințele reale
+- Algoritm: sortare descrescătoare + alocare secvențială
+- Mai eficient, dar necesită calcul
+
+[SLIDE 22] 🗳️ PEER INSTRUCTION: FLSM vs VLSM
+---------------------------------------------
+Scenariu: Rețea 10.0.0.0/24, nevoi: 100, 50, 20, 2 hosturi
+
+Întrebare: Ce tehnică e mai eficientă?
+
+A) FLSM cu /26 (4 subrețele egale)
+B) VLSM cu /25, /26, /27, /30
+C) Nu se poate — nu încap
+D) FLSM cu /27 (8 subrețele egale)
+
+[INSTRUCȚIUNI: Vot → Discuție 3 min → Revot → Explicație]
+
+[SLIDE 23] Exemplu VLSM
+-----------------------
+- Rețea: 192.168.100.0/24
+- Cerințe: 100, 50, 20, 2 gazde
+- Alocare:
+  - 100 → /25 (126 disp.) → 192.168.100.0/25
+  - 50 → /26 (62 disp.) → 192.168.100.128/26
+  - 20 → /27 (30 disp.) → 192.168.100.192/27
+  - 2 → /30 (2 disp.) → 192.168.100.224/30
+- Eficiență: ~85%
+
+[SLIDE 24] Comparație FLSM vs VLSM
+----------------------------------
+| Aspect        | FLSM           | VLSM             |
+|---------------|----------------|------------------|
+| Complexitate  | Scăzută        | Medie            |
+| Eficiență     | Mai scăzută    | Ridicată         |
+| Administrare  | Simplă         | Necesită planif. |
+| Scalabilitate | Limitată       | Bună             |
+
+[SLIDE 25] IPv6 — De ce?
+------------------------
+- Epuizarea adreselor IPv4 (4.3 miliarde)
+- Design îmbunătățit (header simplificat)
+- Securitate nativă (IPsec)
+- Auto-configurare (SLAAC)
+- Spațiu: 2^128 = 340 undecilion adrese
+
+[SLIDE 26] Analogie IPv6: Numere de telefon extinse
+---------------------------------------------------
+- IPv4 = număr de telefon cu 10 cifre → s-au terminat
+- IPv6 = număr cu 32 de cifre → nu se mai termină niciodată
+- Comprimarea = prescurtări ca în SMS-uri
+
+[SLIDE 27] Structura adresei IPv6
+---------------------------------
+- 128 de biți, 8 grupuri × 16 biți
+- Notație hexadecimală: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+- Separator: două puncte (:)
+- Comprimare: eliminare zerouri de început, :: pentru secvențe de 0
+
+[SLIDE 28] Comprimarea IPv6
+---------------------------
+- Regula 1: Zero-urile de început se elimină (0db8 → db8)
+- Regula 2: O singură secvență de grupuri 0 → ::
+- Exemplu:
+  - 2001:0db8:0000:0000:0000:0000:0000:0001
+  - → 2001:db8:0:0:0:0:0:1
+  - → 2001:db8::1
+
+[SLIDE 29] 🗳️ PEER INSTRUCTION: Comprimarea IPv6
+-------------------------------------------------
+Scenariu: Documentezi adresa 2001:0db8:0000:0000:0000:0000:0000:0001
+
+Întrebare: Care e forma comprimată corectă și minimă?
+
+A) 2001:db8:0:0:0:0:0:1
+B) 2001:db8::1
+C) 2001:db8:::1
+D) 2001:db8::0001
+
+[INSTRUCȚIUNI: Vot → Discuție 3 min → Revot → Explicație]
+
+[SLIDE 30] Tipuri de adrese IPv6
+--------------------------------
+- Global Unicast: 2000::/3 (rutabile Internet)
+- Link-Local: fe80::/10 (segment local)
+- Unique Local: fc00::/7 (private)
+- Loopback: ::1
+- Multicast: ff00::/8
+
+[SLIDE 31] Demo: Calculator CIDR
+--------------------------------
+- Demonstrație live: python ex_5_01_cidr_flsm.py analyze 192.168.1.100/24
+- PREDICȚIE: Câte hosturi crezi că va raporta?
+- Explicare output
+- Testare cu adrese propuse de studenți
+
+[SLIDE 32] Demo: VLSM Planner
+-----------------------------
+- Demonstrație live: python ex_5_02_vlsm_ipv6.py vlsm 192.168.0.0/24 100 50 20
+- PREDICȚIE: Ce eficiență estimezi?
+- Explicare algoritm
+- Vizualizare eficiență
+
+[SLIDE 33] Demo: Mininet
+------------------------
+- Pornire topologie: sudo python topo_5_base.py --cli
+- PREDICȚIE: Ping-ul între h1 și h2 va reuși?
+- Comenzi: nodes, net, h1 ip addr, h1 ping h2
+- Explicare TTL decrementare
+
+[SLIDE 34] Analogie TTL: Biletul de metro
+-----------------------------------------
+- TTL = bilet cu limită de stații
+- La fiecare router (stație) se ștampilează → scade cu 1
+- Când ajunge la 0, pachetul e "dat jos"
+- Previne pachetele să circule la infinit
+
+[SLIDE 35] Rezumat
+------------------
+- IPv4: 32 biți, notație CIDR, mască de rețea
+- Subnetting: FLSM (simplu) vs VLSM (eficient)
+- Adresa de rețea = IP AND mască
+- Broadcast = biții de host pe 1
+- IPv6: 128 biți, comprimare, header simplificat
+
+[SLIDE 36] Ce urmează
+---------------------
+- Săptămâna 6: NAT, PAT, ICMP, DHCP
+- Proiect: Document schemă adresare + topologie Mininet
+- Teme de gândit: Ce prefix pentru 500 gazde? 1000? 2000?
+
+[SLIDE 37] Întrebări?
+---------------------
+- Contact: email@ase.ro
+- Materiale: Platform e-learning
+- Întrebări Peer Instruction: docs/peer_instruction_week5.md
+- Exerciții suplimentare: docs/exercitii_variate_week5.md
+
+[SLIDE 38] Bibliografie
+-----------------------
+- Kurose & Ross: Computer Networking (Cap. 4)
+- RFC 4632: CIDR
+- RFC 4291: IPv6 Addressing Architecture
+- RFC 5952: IPv6 Text Representation
+
+# End of outline

@@ -1,0 +1,38 @@
+═══════════════════════════════════════════════════════════════
+  VALIDARE DEMO — Săptămâna 5: Adresare IP
+═══════════════════════════════════════════════════════════════
+
+Data generare: Fri Jan  2 10:20:35 UTC 2026
+Rețea principală: 10.0.5.0/24
+Port Base: 5500
+
+───────────────────────────────────────────────────────────────
+  VERIFICĂRI COMPONENTE
+───────────────────────────────────────────────────────────────
+[OK] Python3: Python 3.12.3
+[OK] Modul ipaddress
+[OK] ex_5_01_cidr_flsm.py - sintaxă validă
+[OK] ex_5_02_vlsm_ipv6.py - sintaxă validă
+[OK] ex_5_03_quiz_generator.py - sintaxă validă
+[OK] net_utils - importabil
+[OK] topo_5_base.py - sintaxă validă
+[OK] topo_5_extended.py - sintaxă validă
+
+───────────────────────────────────────────────────────────────
+  VERIFICĂRI REZULTATE CALCULE
+───────────────────────────────────────────────────────────────
+[OK] CIDR /24 = 254 hosturi: CORECT
+[OK] CIDR /26 = 62 hosturi: CORECT
+[OK] VLSM 4 cerințe = 4 alocări: CORECT
+[OK] IPv6 comprimare: CORECT
+
+───────────────────────────────────────────────────────────────
+  ARTEFACTE GENERATE
+───────────────────────────────────────────────────────────────
+[OK] demo.log (4353 bytes)
+[OK] demo.pcap (82 bytes)
+[OK] validation.txt (2236 bytes)
+
+═══════════════════════════════════════════════════════════════
+  CONCLUZIE: Demo finalizat cu succes
+═══════════════════════════════════════════════════════════════
