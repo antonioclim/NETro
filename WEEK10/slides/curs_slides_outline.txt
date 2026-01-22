@@ -1,0 +1,234 @@
+# Curs 10: HTTP(S), REST, SOAP – Slide Outline
+# Pentru import în PowerPoint sau reveal.js
+# Format: --- = slide break, ## = title, ### = subtitle, - = bullet
+
+---
+## Curs 10
+### HTTP(S), REST și SOAP – Nivelul Aplicație
+- Rețele de Calculatoare
+- Informatică Economică, An 3, Semestrul 2
+- ASE București, 2025-2026
+
+---
+## Ce vom învăța astăzi
+- Mecanismele protocolului HTTP (semantică, headere, coduri)
+- Diferențele HTTP/1.1 vs HTTP/2 vs WebSocket
+- Principiile REST și modelul Richardson
+- Comparația REST vs SOAP în context enterprise
+- Diagnosticarea problemelor de protocol
+
+---
+## De ce contează?
+### Competențe practice
+- Diagnostica rapid probleme de integrare
+- Optimiza performanța prin caching/multiplexare
+- Proiecta API-uri corecte și consistente
+- Depana eficient cu curl, tcpdump, DevTools
+- Comunica precis cu echipe DevOps
+
+---
+## HTTP în Arhitectura Internet
+### Poziționare
+- Nivel Aplicație (L7)
+- Bazat pe TCP pentru transport fiabil
+- TLS pentru securitate (HTTPS)
+- DNS pentru rezolvarea numelor
+
+---
+## Costul real HTTPS
+### Prima cerere
+| Component | Latență |
+|-----------|---------|
+| TCP Handshake | 1 RTT |
+| TLS Handshake | 1-2 RTT |
+| HTTP Request | 1 RTT |
+| **TOTAL** | **3-4 RTT** |
+
+→ Pentru RTT=50ms: ~150-200ms minimum
+
+---
+## Diagrama: HTTPS Handshake
+[fig-https-tls.puml]
+- TCP: SYN → SYN-ACK → ACK
+- TLS: ClientHello → ServerHello+Cert → Finished
+- HTTP: Request → Response (criptat)
+
+---
+## Semantica HTTP
+### Metode și proprietăți
+| Metodă | Sigură | Idempotentă | Cacheable |
+|--------|--------|-------------|-----------|
+| GET | ✓ | ✓ | ✓ |
+| POST | ✗ | ✗ | Condiționat |
+| PUT | ✗ | ✓ | ✗ |
+| DELETE | ✗ | ✓ | ✗ |
+
+---
+## Întrebare de verificare
+### De ce PUT este idempotent dar POST nu?
+- PUT: înlocuiește complet resursa
+  - Același rezultat la repetare
+- POST: creează resurse noi
+  - Duplicare la repetare
+
+---
+## Coduri de Status
+### Autentificare vs Autorizare
+- **401 Unauthorized**: "Cine ești?" (lipsește autentificarea)
+- **403 Forbidden**: "Nu ai voie" (autentificat, fără acces)
+
+### Resurse vs Conținut
+- **404 Not Found**: resursa nu există
+- **405 Method Not Allowed**: resursa există, metoda nu
+- **422 Unprocessable Entity**: format OK, semantică invalidă
+
+---
+## Headere HTTP Critice
+### Content Negotiation
+```http
+Accept: application/json, text/html;q=0.9
+Accept-Language: ro-RO, en;q=0.8
+Accept-Encoding: gzip, br
+```
+
+### Caching
+```http
+Cache-Control: max-age=3600, must-revalidate
+ETag: "v1.2.3-abc"
+If-None-Match: "v1.2.3-abc"
+→ 304 Not Modified
+```
+
+---
+## CORS
+### Cross-Origin Resource Sharing
+- **Nu** este limitare HTTP
+- Este politică de securitate browser
+- Protejează utilizatorii de site-uri malițioase
+
+### Regula de aur
+> "Merge în Postman dar nu în browser" = problemă CORS
+
+---
+## HTTP/1.1 vs HTTP/2
+### Limitări HTTP/1.1
+- Head-of-Line Blocking
+- Headere repetate
+- 6-8 conexiuni per domeniu
+
+### Îmbunătățiri HTTP/2
+- Multiplexare stream-uri
+- Compresie HPACK
+- Prioritizare
+- Server Push
+
+---
+## Diagrama: HTTP/1.1 vs HTTP/2
+[fig-http2-vs-http1.puml]
+- HTTP/1.1: secvențial, multiple conexiuni
+- HTTP/2: paralel, o singură conexiune
+
+---
+## WebSocket
+### Problema
+- HTTP este inițiat exclusiv de client
+- Serverul nu poate "împinge" date
+
+### Soluția
+- Handshake HTTP → Upgrade la WebSocket
+- Comunicație bidirecțională full-duplex
+- Nu mai este HTTP după upgrade
+
+---
+## REST – Stil Arhitectural
+### Principiile Fielding (2000)
+1. Client-Server
+2. Stateless
+3. Cacheable
+4. Uniform Interface
+5. Layered System
+6. Code on Demand (opțional)
+
+---
+## Richardson Maturity Model
+[fig-rest-levels.puml]
+- **Nivel 0**: RPC over HTTP (POST /api)
+- **Nivel 1**: Resurse (/api/users/123)
+- **Nivel 2**: Verbe HTTP + coduri corecte
+- **Nivel 3**: HATEOAS (hypermedia)
+
+---
+## Anti-patterns REST
+### ❌ Evitați
+- `POST /api/users/123/activate` (acțiune în URL)
+- `200 OK {"error": "Not found"}` (cod greșit)
+- `POST` pentru toate operațiile
+- `GET /api/deleteUser?id=123` (efect secundar)
+
+---
+## REST vs SOAP
+| Aspect | REST | SOAP |
+|--------|------|------|
+| Format | JSON | XML |
+| Contract | OpenAPI | WSDL |
+| Transport | HTTP | HTTP, SMTP, JMS |
+| Caching | Nativ | Complex |
+
+---
+## Când SOAP?
+### Contexte enterprise
+- Tranzacții distribuite (WS-AtomicTransaction)
+- Securitate avansată (WS-Security)
+- Mesagerie asincronă (WS-ReliableMessaging)
+- Contracte stricte între organizații
+
+---
+## Diagnosticare HTTP
+### curl
+```bash
+curl -v https://api.example.com/users
+curl -I https://api.example.com/users
+curl -w "Total: %{time_total}s\n" URL
+```
+
+### Browser DevTools
+- Network tab: timeline, headere
+- Console: erori CORS
+- Application: cookies, cache
+
+---
+## Recapitulare
+### Ce am învățat
+1. HTTP este protocol, nu framework
+2. Idempotența permite reîncercări automate
+3. CORS protejează utilizatorii
+4. HTTP/2 multiplexează, semantica rămâne
+5. REST = folosirea corectă a HTTP
+
+---
+## Întrebări de reflexie
+1. De ce PUT este idempotent dar POST nu?
+2. Diferența funcțională între 401 și 403?
+3. De ce "merge în Postman dar nu în browser"?
+4. Ce economisește 304 Not Modified?
+5. De ce WebSocket începe cu HTTP?
+
+---
+## Săptămâna viitoare
+### Curs 11: DNS, SSH, FTP
+- Servicii fundamentale nivel aplicație
+- Automatizare cu Python
+- Orchestrare în Docker
+
+---
+## Bibliografie
+- RFC 7231: HTTP/1.1 Semantics
+- RFC 7540: HTTP/2
+- RFC 6455: WebSocket
+- OpenAPI Specification 3.1
+- Martin Fowler: Richardson Maturity Model
+
+---
+## Revolvix&Hypotheticalandrei
+### Rețele de Calculatoare
+### ASE București, 2025-2026

@@ -1,0 +1,76 @@
+@startuml fig-rest-levels
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam titleFontSize 18
+skinparam titleFontColor #1E3A5F
+
+title Richardson Maturity Model - Niveluri REST
+
+rectangle "Nivel 3: Hypermedia Controls (HATEOAS)" as L3 #E8F5E9 {
+  note right
+    Răspunsurile conțin link-uri
+    pentru navigare automată
+    
+    **Exemplu:**
+    {
+      "user": {"id": 1, "name": "Ion"},
+      "_links": {
+        "self": "/api/users/1",
+        "orders": "/api/users/1/orders"
+      }
+    }
+  end note
+}
+
+rectangle "Nivel 2: HTTP Verbs + Status Codes" as L2 #E3F2FD {
+  note right
+    Folosește corect:
+    GET, POST, PUT, DELETE
+    200, 201, 404, 422...
+    
+    **Exemplu:**
+    PUT /api/users/1 → 200 OK
+    DELETE /api/users/1 → 204 No Content
+  end note
+}
+
+rectangle "Nivel 1: Resources" as L1 #FFF3E0 {
+  note right
+    URI-uri diferite pentru
+    resurse diferite
+    
+    **Exemplu:**
+    /api/users
+    /api/users/1
+    /api/orders
+  end note
+}
+
+rectangle "Nivel 0: The Swamp of POX (RPC)" as L0 #FFEBEE {
+  note right
+    Un singur endpoint,
+    acțiuni în body
+    
+    **Exemplu:**
+    POST /api
+    {"method": "getUser", "id": 1}
+  end note
+}
+
+L3 -[hidden]down-> L2
+L2 -[hidden]down-> L1
+L1 -[hidden]down-> L0
+
+note bottom of L3
+  **Glory of REST**
+  API-ul este cu adevărat RESTful
+  Descoperire automată a capabilităților
+end note
+
+note bottom of L0
+  **Majoritatea API-urilor "REST"**
+  În realitate, nivelul 2 este cel mai comun
+end note
+
+@enduml

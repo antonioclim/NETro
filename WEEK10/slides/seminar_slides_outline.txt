@@ -1,0 +1,320 @@
+# Seminar 10: DNS, SSH, FTP în Docker – Slide Outline
+# Pentru import în PowerPoint sau reveal.js
+# Format: --- = slide break, ## = title, ### = subtitle, - = bullet
+
+---
+## Seminar 10
+### DNS, SSH, FTP – Servicii în Containere Docker
+- Rețele de Calculatoare
+- Informatică Economică, An 3, Semestrul 2
+- ASE București, 2025-2026
+
+---
+## Obiective practice
+### La finalul seminarului vei putea:
+- Explica mecanismul DNS intern Docker
+- Implementa server DNS minimal în Python
+- Configura și utiliza SSH cu Paramiko
+- Demonstra SSH port forwarding
+- Automatiza transfer FTP cu pyftpdlib
+- Orchestra servicii cu Docker Compose
+
+---
+## De ce contează?
+### Fundamente infrastructură
+- **DNS**: Service discovery în Kubernetes/Docker
+- **SSH**: Acces securizat + tunelare trafic
+- **FTP**: Transfer bulk în medii enterprise
+
+### Competențe practice
+- Automatizare CI/CD
+- Scripting infrastructură
+- Debugging conectivitate
+
+---
+## Arhitectura laboratorului
+### 6 containere Docker pe rețea privată
+```
+┌─────────────────────────────────────┐
+│        Rețea labnet (172.20.0.0/24) │
+│                                     │
+│  dns-server  ssh-server  ftp-server │
+│   :5353       :22→2222    :2121     │
+│                                     │
+│    web       ssh-client    debug    │
+│   :8000                   (tools)   │
+└─────────────────────────────────────┘
+```
+
+---
+## Quick Start
+### Pornire infrastructură
+```bash
+cd docker/
+docker compose up -d --build
+
+# Verificare
+docker compose ps
+```
+
+### Intrare în debug container
+```bash
+docker compose exec debug sh
+```
+
+---
+## DNS – Recapitulare
+### Ce face DNS?
+- Traduce **nume în adrese IP**
+- www.example.com → 93.184.216.34
+
+### Tipuri înregistrări
+| Tip | Descriere |
+|-----|-----------|
+| A | Nume → IPv4 |
+| AAAA | Nume → IPv6 |
+| CNAME | Alias |
+| MX | Mail server |
+
+---
+## DNS în Docker
+### DNS intern automat
+- Funcționează pe rețele user-defined
+- Numele serviciului = hostname
+- Server DNS Docker: 127.0.0.11
+
+### Limitări
+- Nu suportă zone custom
+- Nu oferă TTL configurabil
+- Nu permite MX/SRV/TXT custom
+
+---
+## Demo: DNS Docker vs Custom
+### În containerul debug
+```bash
+# DNS Docker implicit
+dig web +short
+
+# DNS custom (serverul nostru)
+dig @dns-server -p 5353 myservice.lab.local
+```
+
+### Rezultat așteptat
+```
+$ dig @dns-server -p 5353 myservice.lab.local +short
+10.10.10.10
+```
+
+---
+## Server DNS cu Python (dnslib)
+```python
+from dnslib import DNSRecord, QTYPE, RR, A
+from dnslib.server import DNSServer, BaseResolver
+
+class CustomResolver(BaseResolver):
+    RECORDS = {
+        "myservice.lab.local": "10.10.10.10",
+        "api.lab.local": "10.10.10.20",
+    }
+    
+    def resolve(self, request, handler):
+        reply = request.reply()
+        qname = str(request.q.qname).rstrip('.')
+        if qname in self.RECORDS:
+            reply.add_answer(RR(qname, QTYPE.A,
+                rdata=A(self.RECORDS[qname])))
+        return reply
+```
+
+---
+## SSH – Secure Shell
+### Capabilități
+- Conexiune securizată
+- Execuție comenzi la distanță
+- Transfer fișiere (SFTP)
+- **Tunelare trafic** (port forwarding)
+
+---
+## SSH Port Forwarding
+### Local forward (-L)
+```bash
+ssh -L 9000:web:8000 -p 2222 labuser@localhost
+# localhost:9000 → tunel → web:8000
+```
+
+### Remote forward (-R)
+```bash
+ssh -R 9000:localhost:3000 user@server
+# server:9000 → tunel → localhost:3000
+```
+
+### Dynamic forward (-D)
+```bash
+ssh -D 1080 user@server
+# SOCKS5 proxy pe localhost:1080
+```
+
+---
+## Demo: Port Forwarding
+### Problema
+- Serviciul `web` (:8000) **nu este expus** pe host
+- Cum îl accesăm?
+
+### Soluția
+```bash
+# Terminal 1: Crează tunel
+ssh -L 9000:web:8000 -p 2222 labuser@localhost -N
+
+# Terminal 2: Test
+curl http://localhost:9000/
+```
+
+---
+## SSH cu Paramiko
+### Conectare și execuție
+```python
+import paramiko
+
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(
+    paramiko.AutoAddPolicy())
+client.connect("localhost", 2222,
+    "labuser", "labpass")
+
+stdin, stdout, stderr = client.exec_command("uname -a")
+print(stdout.read().decode())
+client.close()
+```
+
+---
+## FTP – File Transfer Protocol
+### Două conexiuni
+- Port 21: Canal de control
+- Port 20 / pasive: Canal de date
+
+### Mod activ vs pasiv
+| Mod | Client | NAT |
+|-----|--------|-----|
+| Activ | SERVER se conectează | ❌ Problematic |
+| Pasiv | CLIENT se conectează | ✅ Funcționează |
+
+---
+## FTP cu Python (ftplib)
+```python
+from ftplib import FTP
+import io
+
+ftp = FTP()
+ftp.connect('localhost', 2121)
+ftp.login('labftp', 'labftp')
+
+# Listare
+print(ftp.nlst())
+
+# Upload
+data = io.BytesIO(b"Test content")
+ftp.storbinary('STOR uploads/test.txt', data)
+
+ftp.quit()
+```
+
+---
+## Captură trafic FTP
+### Observație importantă
+```bash
+tcpdump -i any port 2121 -A
+```
+
+### Ce vedem?
+- USER labftp
+- PASS labftp (în plaintext!)
+- STOR uploads/test.txt
+
+> ⚠️ FTP nu este criptat – folosiți FTPS sau SFTP
+
+---
+## Debugging
+### Probleme comune
+| Problemă | Cauză | Soluție |
+|----------|-------|---------|
+| Connection refused | Serviciu nepornit | docker compose up |
+| Name not resolved | DNS greșit | docker network ls |
+| Permission denied | Credențiale | Verifică compose |
+
+### Instrumente
+```bash
+docker compose logs <service>
+tcpdump -i any port X -A
+curl -v URL
+ssh -v user@host
+```
+
+---
+## Exercițiu: Script Integrare
+### Cerințe
+1. Verifică disponibilitate servicii
+2. Query DNS pentru domeniu custom
+3. Conectare SSH + execuție comandă
+4. Transfer fișier prin FTP
+5. Generare raport JSON
+
+### Fișier: lab10_integration.py
+
+---
+## Evaluare S10
+| Criteriu | Puncte |
+|----------|--------|
+| Verificare servicii | 2p |
+| Query DNS funcțional | 1.5p |
+| SSH + Paramiko | 2p |
+| Transfer FTP | 1.5p |
+| Raport JSON | 1p |
+| Documentare + erori | 2p |
+| **TOTAL** | **10p** |
+
+---
+## What-if: Scenarii avansate
+### Explorare
+1. Ce se întâmplă dacă modifici TTL-ul DNS?
+2. Cum arată traficul cu FTPS?
+3. SOCKS proxy pentru navigare anonimă?
+4. Multi-hop SSH tunnel?
+
+---
+## Resurse
+### Documentație
+- Docker Networking: docs.docker.com/network
+- Paramiko: docs.paramiko.org
+- pyftpdlib: pyftpdlib.readthedocs.io
+- dnslib: pypi.org/project/dnslib
+
+### RFCs
+- RFC 1035: DNS
+- RFC 4251: SSH Architecture
+- RFC 959: FTP
+
+---
+## Recapitulare
+### Ce am învățat
+- DNS Docker vs DNS custom
+- SSH pentru execuție și tunelare
+- FTP în mod pasiv pentru NAT
+- Automatizare Python pentru toate
+
+### Competențe dobândite
+- Debugging servicii de rețea
+- Scripting infrastructură
+- Orchestrare containere
+
+---
+## Săptămâna viitoare
+### Seminar 11
+- Aplicații distribuite cu Nginx
+- Load balancing
+- Reverse proxy
+- Docker Compose multi-container
+
+---
+## Revolvix&Hypotheticalandrei
+### Rețele de Calculatoare
+### ASE București, 2025-2026

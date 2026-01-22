@@ -1,0 +1,70 @@
+@startuml fig-https-tls
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam titleFontSize 18
+skinparam sequenceArrowThickness 2
+skinparam sequenceLifeLineBorderColor #1E3A5F
+skinparam sequenceParticipantBorderColor #1E3A5F
+skinparam sequenceParticipantBackgroundColor #E3F2FD
+
+title HTTPS = HTTP + TLS Handshake
+
+participant "Client\n(Browser)" as C
+participant "Server\n(HTTPS)" as S
+
+== TCP Handshake (1 RTT) ==
+
+C -> S: SYN
+S -> C: SYN-ACK
+C -> S: ACK
+
+note right of S: Conexiune TCP stabilită
+
+== TLS Handshake (1-2 RTT) ==
+
+C -> S: ClientHello
+note left of C
+  • Versiuni TLS suportate
+  • Cipher suites
+  • Random bytes
+  • Extensions (SNI, ALPN)
+end note
+
+S -> C: ServerHello + Certificate + ServerHelloDone
+note right of S
+  • Versiune TLS aleasă
+  • Cipher suite selectat
+  • Certificat X.509
+  • Server random
+end note
+
+C -> S: ClientKeyExchange + ChangeCipherSpec + Finished
+note left of C
+  • Pre-master secret criptat
+  • Switch la comunicare criptată
+  • Verificare handshake
+end note
+
+S -> C: ChangeCipherSpec + Finished
+note right of S
+  • Server confirmă
+  • Cheie de sesiune derivată
+end note
+
+note over C,S #E8F5E9
+  **Conexiune TLS Stabilită**
+  Toate datele sunt acum criptate end-to-end
+end note
+
+== HTTP Request/Response (1+ RTT) ==
+
+C -> S: **GET /api/users HTTP/1.1** (criptat)
+S -> C: **HTTP/1.1 200 OK + JSON body** (criptat)
+
+note over C,S
+  **Total latență prima cerere: 3-4 RTT**
+  Pentru RTT = 50ms → ~150-200ms
+end note
+
+@enduml

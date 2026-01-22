@@ -1,0 +1,89 @@
+@startuml fig-http2-vs-http1
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam titleFontSize 18
+
+title HTTP/1.1 vs HTTP/2 Comparison
+
+left to right direction
+
+package "HTTP/1.1" as H1 #FFEBEE {
+  rectangle "Conexiunea 1" as C1 {
+    rectangle "Request 1" as R1 #EF5350
+    rectangle "Response 1" as P1 #EF5350
+    rectangle "Request 2" as R2 #F44336
+    rectangle "Response 2" as P2 #F44336
+    rectangle "Request 3" as R3 #E53935
+    rectangle "Response 3" as P3 #E53935
+    
+    R1 -right-> P1
+    P1 -down-> R2
+    R2 -right-> P2
+    P2 -down-> R3
+    R3 -right-> P3
+  }
+  
+  rectangle "Conexiunea 2" as C2 {
+    rectangle "Request 4" as R4 #EF5350
+    rectangle "Response 4" as P4 #EF5350
+    rectangle "Request 5" as R5 #F44336
+    rectangle "Response 5" as P5 #F44336
+    
+    R4 -right-> P4
+    P4 -down-> R5
+    R5 -right-> P5
+  }
+  
+  note bottom of H1
+    **Probleme:**
+    • Head-of-Line Blocking
+    • 6-8 conexiuni per domeniu
+    • Headere repetate
+    • Procesare secvențială
+  end note
+}
+
+package "HTTP/2" as H2 #E8F5E9 {
+  rectangle "Conexiune Unică" as C3 {
+    rectangle "Stream 1" as S1 #66BB6A
+    rectangle "Stream 2" as S2 #4CAF50
+    rectangle "Stream 3" as S3 #43A047
+    rectangle "Stream 4" as S4 #388E3C
+    rectangle "Stream 5" as S5 #2E7D32
+    
+    S1 -[hidden]right-> S2
+    S2 -[hidden]right-> S3
+    S3 -[hidden]right-> S4
+    S4 -[hidden]right-> S5
+  }
+  
+  note bottom of H2
+    **Avantaje:**
+    • Multiplexare pe o conexiune
+    • Compresie HPACK headere
+    • Prioritizare stream-uri
+    • Server Push (opțional)
+    • Semantică HTTP identică
+  end note
+}
+
+H1 -[hidden]right-> H2
+
+note as N1
+  **HTTP/1.1:**
+  Cererile se procesează
+  secvențial pe conexiune.
+  Browser-ul deschide
+  multiple conexiuni TCP.
+end note
+
+note as N2
+  **HTTP/2:**
+  Toate cererile în paralel
+  pe aceeași conexiune TCP.
+  Binary framing permite
+  intercalarea frame-urilor.
+end note
+
+@enduml
