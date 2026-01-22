@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu Networking Installation Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fafafa;
+            color: #333;
+        }
+        h1, h2, h3 { color: #1a73e8; }
+        h1 { border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        h2 { border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #34a853; }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #1a73e8;
+            color: white;
+        }
+        tr:nth-child(even) { background: #f9f9f9; }
+        blockquote {
+            border-left: 4px solid #1a73e8;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: #e8f4fd;
+        }
+        .checkpoint {
+            background: #e8f5e9;
+            border-left: 4px solid #34a853;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        ul { padding-left: 25px; }
+        li { margin: 5px 0; }
+        a { color: #1a73e8; }
+    </style>
+</head>
+<body>
+<h1 id="complete-installation-and-configuration-guide">Complete Installation and Configuration Guide</h1>
+<h2 id="ubuntu-server-2404-lts-for-computer-networks-seminars">Ubuntu Server 24.04 LTS for Computer Networks Seminars</h2>
+<p><strong>Document generated:</strong> January 2026<br />
+<strong>Target platform:</strong> Ubuntu Server 24.04 LTS (VirtualBox VM)<br />
+<strong>Purpose:</strong> Complete setup for WEEK1–WEEK14 of the Computer Networks course</p>
+<hr />
+<h2 id="estimated-installation-time">⏱️ Estimated Installation Time</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Duration</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VirtualBox Configuration</td>
+<td>15-20 min</td>
+<td>Includes ISO download</td>
+</tr>
+<tr>
+<td>Ubuntu Server Installation</td>
+<td>20-30 min</td>
+<td>Semi-automated process</td>
+</tr>
+<tr>
+<td>System Update</td>
+<td>10-15 min</td>
+<td>Requires internet</td>
+</tr>
+<tr>
+<td>Network Tools</td>
+<td>5-10 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Python and Libraries</td>
+<td>10-15 min</td>
+<td>pip install</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td>10-15 min</td>
+<td>Includes configuration</td>
+</tr>
+<tr>
+<td>Mininet and OVS</td>
+<td>5-10 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Wireshark/TShark</td>
+<td>5 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Final Verification</td>
+<td>5 min</td>
+<td>Script included</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>90-120 min</strong></td>
+<td>With stable connection</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Tip:</strong> You can let updates run in background and return after 30 minutes.</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-initial-virtualbox-configuration">Initial VirtualBox Configuration</a></li>
+<li><a href="#11-recommended-vm-settings">1.1 Recommended VM Settings</a></li>
+<li><a href="#12-network-adapter-configuration-in-virtualbox">1.2 Network Adapter Configuration</a></li>
+<li><a href="#13-enable-nested-virtualization-optional-for-advanced-mininet">1.3 Enable Nested Virtualization</a></li>
+<li><a href="#14-install-virtualbox-guest-additions-cli">1.4 Install VirtualBox Guest Additions</a></li>
+<li><a href="#15-configure-port-forwarding-for-ssh-with-nat">1.5 Configure Port Forwarding for SSH</a></li>
+<li><a href="#2-system-update-and-essential-packages">System Update and Essential Packages</a></li>
+<li><a href="#3-network-tools">Network Tools</a></li>
+<li><a href="#4-python-and-libraries">Python and Libraries</a></li>
+<li><a href="#5-docker-and-docker-compose">Docker and Docker Compose</a></li>
+<li><a href="#6-mininet-and-open-vswitch">Mininet and Open vSwitch</a></li>
+<li><a href="#7-wiresharktshark">Wireshark/TShark</a></li>
+<li><a href="#8-additional-configuration">Additional Configuration</a></li>
+<li><a href="#9-transfer-and-organise-materials">Transfer and Organise Materials</a></li>
+<li><a href="#10-verification-script">Verification Script</a></li>
+<li><a href="#11-troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="1-initial-virtualbox-configuration">1. Initial VirtualBox Configuration</h2>
+<h3 id="11-recommended-vm-settings">1.1 Recommended VM Settings</h3>
+<p>Before installing Ubuntu, ensure the VM has the appropriate configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Minimum Value</th>
+<th>Recommended Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAM</td>
+<td>2 GB</td>
+<td>4–8 GB</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>2 cores</td>
+<td>4 cores</td>
+</tr>
+<tr>
+<td>Disk</td>
+<td>25 GB</td>
+<td>50 GB</td>
+</tr>
+<tr>
+<td>Network Adapter 1</td>
+<td>NAT</td>
+<td>NAT (for internet access)</td>
+</tr>
+<tr>
+<td>Network Adapter 2</td>
+<td>—</td>
+<td>Host-Only (for access from host)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-network-adapter-configuration-in-virtualbox">1.2 Network Adapter Configuration in VirtualBox</h3>
+<div class="codehilite"><pre><span></span><code><span class="nv">Settings</span><span class="w"> </span>→<span class="w"> </span><span class="nv">Network</span>:
+
+<span class="nv">Adapter</span><span class="w"> </span><span class="mi">1</span>:
+<span class="w">  </span>☑<span class="w"> </span><span class="nv">Enable</span><span class="w"> </span><span class="nv">Network</span><span class="w"> </span><span class="nv">Adapter</span>
+<span class="w">  </span><span class="nv">Attached</span><span class="w"> </span><span class="nv">to</span>:<span class="w"> </span><span class="nv">NAT</span>
+<span class="w">  </span><span class="ss">(</span><span class="k">For</span><span class="w"> </span><span class="nv">internet</span><span class="w"> </span><span class="nv">access</span><span class="w"> </span><span class="nv">from</span><span class="w"> </span><span class="nv">VM</span><span class="ss">)</span>
+
+<span class="nv">Adapter</span><span class="w"> </span><span class="mi">2</span>:
+<span class="w">  </span>☑<span class="w"> </span><span class="nv">Enable</span><span class="w"> </span><span class="nv">Network</span><span class="w"> </span><span class="nv">Adapter</span><span class="w">  </span>
+<span class="w">  </span><span class="nv">Attached</span><span class="w"> </span><span class="nv">to</span>:<span class="w"> </span><span class="nv">Host</span><span class="o">-</span><span class="nv">only</span><span class="w"> </span><span class="nv">Adapter</span>
+<span class="w">  </span><span class="nv">Name</span>:<span class="w"> </span><span class="nv">vboxnet0</span><span class="w"> </span><span class="ss">(</span><span class="nv">or</span><span class="w"> </span><span class="nv">create</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">new</span><span class="w"> </span><span class="nv">one</span><span class="ss">)</span>
+<span class="w">  </span><span class="ss">(</span><span class="k">For</span><span class="w"> </span><span class="nv">SSH</span><span class="w"> </span><span class="nv">and</span><span class="w"> </span><span class="nv">access</span><span class="w"> </span><span class="nv">from</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">host</span><span class="w"> </span><span class="nv">machine</span><span class="ss">)</span>
+</code></pre></div>
+
+<p><strong>Creating a Host-Only Network (if it doesn't exist):</strong></p>
+<div class="codehilite"><pre><span></span><code>VirtualBox → File → Host Network Manager → Create
+  - IPv4 Address: 192.168.56.1
+  - IPv4 Network Mask: 255.255.255.0
+  - ☑ Enable DHCP Server
+</code></pre></div>
+
+<h3 id="13-enable-nested-virtualization-optional-for-advanced-mininet">1.3 Enable Nested Virtualization (Optional, for advanced Mininet)</h3>
+<blockquote>
+<p><strong>⚠️ IMPORTANT NOTE:</strong>
+- Nested virtualization is <strong>optional</strong> — the seminars work without it
+- The VM must be <strong>powered off</strong> when running the command
+- Requires CPU with hardware support VT-x (Intel) or AMD-V (AMD)</p>
+</blockquote>
+<h4 id="on-windows-powershell-as-administrator">On Windows (PowerShell as Administrator)</h4>
+<p><strong>Step 1: Find the exact VM name</strong></p>
+<p>Open PowerShell as Administrator and run:</p>
+<div class="codehilite"><pre><span></span><code><span class="c"># List all existing VMs</span>
+<span class="p">&amp;</span> <span class="s2">&quot;C:\Program Files\Oracle\VirtualBox\VBoxManage.exe&quot;</span> <span class="n">list</span> <span class="n">vms</span>
+</code></pre></div>
+
+<p>You will see output like:</p>
+<div class="codehilite"><pre><span></span><code>&quot;Ubuntu-Server-24&quot; {a1b2c3d4-e5f6-...}
+&quot;Windows10-Test&quot; {f7g8h9i0-j1k2-...}
+</code></pre></div>
+
+<p><strong>Step 2: Enable nested virtualization</strong></p>
+<p>Use the exact name from the list above:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&amp;</span> <span class="s2">&quot;C:\Program Files\Oracle\VirtualBox\VBoxManage.exe&quot;</span> <span class="n">modifyvm</span> <span class="s2">&quot;Ubuntu-Server-24&quot;</span> <span class="p">-</span><span class="n">-nested-hw-virt</span> <span class="n">on</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>💡 Why is the full path required?</strong>
+On Windows, <code>VBoxManage.exe</code> is not automatically added to the PATH environment variable.
+You must use the full path: <code>"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"</code>
+The <code>&amp;</code> character in PowerShell allows execution of a program with spaces in the path.</p>
+</blockquote>
+<p><strong>Alternative — Add VirtualBox to PATH (permanent):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c"># Run once to permanently add to PATH</span>
+<span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s2">&quot;Path&quot;</span><span class="p">,</span> <span class="nv">$env:Path</span> <span class="p">+</span> <span class="s2">&quot;;C:\Program Files\Oracle\VirtualBox&quot;</span><span class="p">,</span> <span class="s2">&quot;User&quot;</span><span class="p">)</span>
+<span class="c"># Restart PowerShell, then you can use directly:</span>
+<span class="n">VBoxManage</span> <span class="n">list</span> <span class="n">vms</span>
+</code></pre></div>
+
+<h4 id="on-linuxmacos">On Linux/macOS</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># List VMs</span>
+VBoxManage<span class="w"> </span>list<span class="w"> </span>vms
+
+<span class="c1"># Enable nested virtualization</span>
+VBoxManage<span class="w"> </span>modifyvm<span class="w"> </span><span class="s2">&quot;VMName&quot;</span><span class="w"> </span>--nested-hw-virt<span class="w"> </span>on
+</code></pre></div>
+
+<h4 id="verify-activation">Verify Activation</h4>
+<p>After starting the VM, verify from inside Ubuntu:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check virtualization support</span>
+egrep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;(vmx|svm)&#39;</span><span class="w"> </span>/proc/cpuinfo
+<span class="c1"># Result &gt; 0 means nested virt is working</span>
+</code></pre></div>
+
+<h3 id="14-install-virtualbox-guest-additions-cli">1.4 Install VirtualBox Guest Additions (CLI)</h3>
+<p>Guest Additions provide important functionality: shared folders, shared clipboard, dynamic resolution, and improved performance.</p>
+<h4 id="method-1-from-virtualbox-cd-recommended-current-version">Method 1: From VirtualBox CD (Recommended — current version)</h4>
+<p><strong>Step 1: Install required dependencies</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>build-essential<span class="w"> </span>dkms<span class="w"> </span>linux-headers-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="w"> </span>-y
+</code></pre></div>
+
+<p><strong>Step 2: Mount the Guest Additions CD</strong></p>
+<p>In the VirtualBox VM window:</p>
+<div class="codehilite"><pre><span></span><code>Devices → Insert Guest Additions CD image...
+</code></pre></div>
+
+<p><strong>Step 3: Mount and run the installer</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Mount the CD</span>
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/cdrom<span class="w"> </span>/mnt
+
+<span class="c1"># Run the installer</span>
+sudo<span class="w"> </span>/mnt/VBoxLinuxAdditions.run
+</code></pre></div>
+
+<p><strong>Step 4: Unmount and reboot</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>umount<span class="w"> </span>/mnt
+sudo<span class="w"> </span>reboot
+</code></pre></div>
+
+<p><strong>Step 5: Verify installation</strong></p>
+<div class="codehilite"><pre><span></span><code>lsmod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>vbox
+<span class="c1"># You should see: vboxguest, vboxsf, vboxvideo</span>
+</code></pre></div>
+
+<h4 id="method-2-from-ubuntu-repositories-simpler-possibly-older-version">Method 2: From Ubuntu Repositories (Simpler, possibly older version)</h4>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>virtualbox-guest-utils<span class="w"> </span>virtualbox-guest-dkms<span class="w"> </span>-y
+sudo<span class="w"> </span>reboot
+</code></pre></div>
+
+<h4 id="troubleshooting-guest-additions">Troubleshooting Guest Additions</h4>
+<p><strong>Kernel headers error:</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-headers-generic<span class="w"> </span>-y
+</code></pre></div>
+
+<p><strong>If <code>/dev/cdrom</code> doesn't exist:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check available device</span>
+lsblk
+<span class="c1"># Usually it&#39;s /dev/sr0</span>
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sr0<span class="w"> </span>/mnt
+</code></pre></div>
+
+<p><strong>Final verification:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check loaded modules</span>
+lsmod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>vbox
+
+<span class="c1"># Check Guest Additions version</span>
+VBoxControl<span class="w"> </span>--version
+</code></pre></div>
+
+<h3 id="15-configure-port-forwarding-for-ssh-with-nat">1.5 Configure Port Forwarding for SSH (with NAT)</h3>
+<p>When using <strong>NAT</strong> as the network adapter, the guest is not directly accessible from the host. You need to configure <strong>Port Forwarding</strong> to access SSH.</p>
+<h4 id="configuration-in-virtualbox">Configuration in VirtualBox</h4>
+<p><strong>Step 1:</strong> With the VM stopped or running, open:</p>
+<div class="codehilite"><pre><span></span><code>VM Settings → Network → Adapter 1 (NAT) → Advanced → Port Forwarding
+</code></pre></div>
+
+<p><strong>Step 2:</strong> Click the <strong>+</strong> icon (Add new rule) and fill in:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Protocol</th>
+<th>Host IP</th>
+<th>Host Port</th>
+<th>Guest IP</th>
+<th>Guest Port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH</td>
+<td>TCP</td>
+<td>127.0.0.1</td>
+<td>2222</td>
+<td>10.0.2.15</td>
+<td>22</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Note:</strong> You can leave <strong>Guest IP</strong> empty — VirtualBox will forward to any IP in the guest.</p>
+</blockquote>
+<p><strong>Step 3:</strong> Click <strong>OK</strong> to save.</p>
+<h4 id="configure-ssh-in-ubuntu-guest">Configure SSH in Ubuntu Guest</h4>
+<p>Ensure SSH is running in the VM:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>ssh
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>ssh
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+</code></pre></div>
+
+<h4 id="connect-from-windows">Connect from Windows</h4>
+<p><strong>Option A: PowerShell / Command Prompt</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">ssh</span> <span class="n">username</span><span class="nv">@127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span> <span class="n">-p</span> <span class="n">2222</span>
+</code></pre></div>
+
+<p><strong>Option B: PuTTY</strong>
+- <strong>Host Name:</strong> <code>127.0.0.1</code>
+- <strong>Port:</strong> <code>2222</code>
+- <strong>Connection type:</strong> SSH</p>
+<p><strong>Option C: Windows Terminal</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">ssh</span> <span class="n">username</span><span class="nv">@localhost</span> <span class="n">-p</span> <span class="n">2222</span>
+</code></pre></div>
+
+<h4 id="connect-from-linuxmacos-from-host">Connect from Linux/macOS (from host)</h4>
+<div class="codehilite"><pre><span></span><code>ssh<span class="w"> </span>username@127.0.0.1<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
+</code></pre></div>
+
+<h4 id="additional-port-forwarding-optional">Additional Port Forwarding (Optional)</h4>
+<p>To access other services from the VM, add additional rules:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Protocol</th>
+<th>Host Port</th>
+<th>Guest Port</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP</td>
+<td>TCP</td>
+<td>8080</td>
+<td>80</td>
+<td>Web server</td>
+</tr>
+<tr>
+<td>HTTPS</td>
+<td>TCP</td>
+<td>8443</td>
+<td>443</td>
+<td>Secure web server</td>
+</tr>
+<tr>
+<td>Flask</td>
+<td>TCP</td>
+<td>5000</td>
+<td>5000</td>
+<td>Python Flask applications</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>TCP</td>
+<td>3333</td>
+<td>3333</td>
+<td>Custom protocols (WEEK4)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>⚠️ Alternative:</strong> If you configured <strong>Adapter 2 as Host-Only</strong> (section 1.2), you can access the VM directly on the 192.168.56.x network IP without port forwarding.</p>
+</blockquote>
+<hr />
+<h3 id="checkpoint-virtualbox-configured">✅ Checkpoint: VirtualBox Configured</h3>
+<p>Verify before continuing:
+- [ ] VM starts without errors
+- [ ] You see Ubuntu login screen
+- [ ] Guest Additions work (dynamic resolution)</p>
+<p><strong>Issue?</strong> → See <a href="#11-troubleshooting">Troubleshooting</a></p>
+<hr />
+<h2 id="2-system-update-and-essential-packages">2. System Update and Essential Packages</h2>
+<h3 id="21-first-connection-and-update">2.1 First Connection and Update</h3>
+<p>After installing Ubuntu Server and first login:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Full system update</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+
+<span class="c1"># Install essential base packages</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>build-essential<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>software-properties-common<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-transport-https<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ca-certificates<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>gnupg<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>lsb-release<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>curl<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>wget<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>git<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>vim<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nano<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>htop<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>tree<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>unzip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>zip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>jq<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>make<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>gcc<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>g++
+</code></pre></div>
+
+<h3 id="22-configure-localisation-and-timezone">2.2 Configure Localisation and Timezone</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Set timezone to Bucharest</span>
+sudo<span class="w"> </span>timedatectl<span class="w"> </span>set-timezone<span class="w"> </span>Europe/Bucharest
+
+<span class="c1"># Verify</span>
+timedatectl
+
+<span class="c1"># Configure locales (optional)</span>
+sudo<span class="w"> </span>locale-gen<span class="w"> </span>en_GB.UTF-8
+sudo<span class="w"> </span>update-locale<span class="w"> </span><span class="nv">LANG</span><span class="o">=</span>en_GB.UTF-8
+</code></pre></div>
+
+<h3 id="23-configure-ssh-for-remote-access">2.3 Configure SSH for Remote Access</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install OpenSSH Server (if not installed)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>openssh-server
+
+<span class="c1"># Start and enable at boot</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>ssh
+
+<span class="c1"># Check status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+
+<span class="c1"># Display IP for connection</span>
+ip<span class="w"> </span>addr<span class="w"> </span>show
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-system-updated">✅ Checkpoint: System Updated</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Quick verification</span>
+cat<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>VERSION
+<span class="c1"># Should show: VERSION=&quot;24.04...&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="3-network-tools">3. Network Tools</h2>
+<h3 id="31-essential-networking-packages">3.1 Essential Networking Packages</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Basic diagnostics</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois
+
+<span class="c1"># Connectivity and transfer</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client
+
+<span class="c1"># Traffic monitoring</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon
+
+<span class="c1"># Scanning and security</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping
+
+<span class="c1"># Firewall</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iptables<span class="w"> </span>conntrack
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iptables-persistent<span class="w">  </span><span class="c1"># Will prompt for saving rules</span>
+
+<span class="c1"># Ethernet bridging and VLAN</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+</code></pre></div>
+
+<p>Or all in a single command (without comments):</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>iptables<span class="w"> </span>iptables-persistent<span class="w"> </span>conntrack<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+</code></pre></div>
+
+<h3 id="32-configure-permissions-for-packet-capture">3.2 Configure Permissions for Packet Capture</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Allow tcpdump without sudo</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/tcpdump
+
+<span class="c1"># Verify</span>
+getcap<span class="w"> </span>/usr/bin/tcpdump
+</code></pre></div>
+
+<hr />
+<h2 id="4-python-and-libraries">4. Python and Libraries</h2>
+<h3 id="41-install-python-3-and-pip">4.1 Install Python 3 and Pip</h3>
+<p>Ubuntu 24.04 comes with Python 3.12. We also install additional components:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-pip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-venv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-setuptools<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-wheel
+</code></pre></div>
+
+<h3 id="42-python-libraries-for-week1week14-seminars">4.2 Python Libraries for WEEK1–WEEK14 Seminars</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Required flags in Ubuntu 24.04:</span>
+<span class="c1">#   --break-system-packages  = allows installation in the system environment</span>
+<span class="c1">#   --ignore-installed       = avoids conflicts with packages installed by apt/debian</span>
+<span class="c1">#</span>
+<span class="c1"># The warning about &quot;Running pip as root&quot; can be ignored in the context of a lab VM</span>
+
+<span class="c1"># Packet manipulation and sniffing (WEEK1, WEEK3, WEEK6, WEEK7, WEEK13)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>scapy
+
+<span class="c1"># Pcap parsing (WEEK1, WEEK2)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>dpkt<span class="w"> </span>pyshark
+
+<span class="c1"># Network interface information (WEEK2)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>netifaces
+
+<span class="c1"># HTTP and REST API (WEEK8, WEEK10)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>flask<span class="w"> </span>requests
+
+<span class="c1"># DNS (WEEK10, WEEK11, WEEK12)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>dnslib<span class="w"> </span>dnspython
+
+<span class="c1"># SSH and SFTP (WEEK10, WEEK11)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>paramiko
+
+<span class="c1"># FTP Server (WEEK9, WEEK10, WEEK11)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>pyftpdlib
+
+<span class="c1"># MQTT for IoT (WEEK13)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>paho-mqtt
+
+<span class="c1"># gRPC for advanced RPC (WEEK12)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf
+
+<span class="c1"># Utilities</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil
+
+<span class="c1"># SDN Controller (WEEK6)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>os-ken
+
+<span class="c1"># Documentation (optional)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>python-docx
+</code></pre></div>
+
+<p>Or all in a single command:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>scapy<span class="w"> </span>dpkt<span class="w"> </span>pyshark<span class="w"> </span>netifaces<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>flask<span class="w"> </span>requests<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>dnslib<span class="w"> </span>dnspython<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>paramiko<span class="w"> </span>pyftpdlib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>paho-mqtt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>os-ken<span class="w"> </span>python-docx
+</code></pre></div>
+
+<blockquote>
+<p><strong>💡 Note:</strong> The <code>--ignore-installed</code> flag resolves errors like <code>Cannot uninstall X, RECORD file not found</code> that occur when pip tries to update packages installed by the operating system (apt/debian).</p>
+</blockquote>
+<h3 id="43-verify-python-installation">4.3 Verify Python Installation</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check versions</span>
+python3<span class="w"> </span>--version
+pip3<span class="w"> </span>--version
+
+<span class="c1"># Test import of essential libraries</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import scapy.all</span>
+<span class="s2">import socket</span>
+<span class="s2">import ipaddress</span>
+<span class="s2">import struct</span>
+<span class="s2">import threading</span>
+<span class="s2">import scapy</span>
+<span class="s2">print(&#39;✓ All standard modules are working&#39;)</span>
+<span class="s2">print(f&#39;  Scapy version: {scapy.VERSION}&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+
+<p>Quick verification for all installed libraries:</p>
+<div class="codehilite"><pre><span></span><code>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">libs = [&#39;scapy&#39;, &#39;dpkt&#39;, &#39;flask&#39;, &#39;requests&#39;, &#39;dns&#39;, &#39;paramiko&#39;, &#39;pyftpdlib&#39;, &#39;paho&#39;, &#39;grpc&#39;, &#39;colorama&#39;]</span>
+<span class="s2">for lib in libs:</span>
+<span class="s2">    try:</span>
+<span class="s2">        __import__(lib)</span>
+<span class="s2">        print(f&#39;✓ {lib}&#39;)</span>
+<span class="s2">    except ImportError:</span>
+<span class="s2">        print(f&#39;✗ {lib} - MISSING&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-python-configured">✅ Checkpoint: Python Configured</h3>
+<div class="codehilite"><pre><span></span><code>python3<span class="w"> </span>--version<span class="w">        </span><span class="c1"># Python 3.12+</span>
+pip3<span class="w"> </span>--version<span class="w">           </span><span class="c1"># pip working</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import scapy; import flask; print(&#39;OK&#39;)&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="5-docker-and-docker-compose">5. Docker and Docker Compose</h2>
+<h3 id="51-install-docker-engine">5.1 Install Docker Engine</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Remove old versions (if they exist)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>remove<span class="w"> </span>-y<span class="w"> </span>docker<span class="w"> </span>docker-engine<span class="w"> </span>docker.io<span class="w"> </span>containerd<span class="w"> </span>runc<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+
+<span class="c1"># Add official Docker repository</span>
+sudo<span class="w"> </span>install<span class="w"> </span>-m<span class="w"> </span><span class="m">0755</span><span class="w"> </span>-d<span class="w"> </span>/etc/apt/keyrings
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://download.docker.com/linux/ubuntu/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+sudo<span class="w"> </span>chmod<span class="w"> </span>a+r<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+
+<span class="nb">echo</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">&quot;deb [arch=</span><span class="k">$(</span>dpkg<span class="w"> </span>--print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \</span>
+<span class="s2">  </span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2"> stable&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/docker.list<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+
+<span class="c1"># Install Docker</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>docker-ce<span class="w"> </span>docker-ce-cli<span class="w"> </span>containerd.io<span class="w"> </span>docker-buildx-plugin<span class="w"> </span>docker-compose-plugin
+
+<span class="c1"># Verify installation</span>
+sudo<span class="w"> </span>docker<span class="w"> </span>--version
+sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>version
+</code></pre></div>
+
+<h3 id="52-configure-docker-for-non-root-user">5.2 Configure Docker for Non-Root User</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Add current user to docker group</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+
+<span class="c1"># Apply changes (or re-login)</span>
+newgrp<span class="w"> </span>docker
+
+<span class="c1"># Verify (should work without sudo)</span>
+docker<span class="w"> </span>run<span class="w"> </span>hello-world
+</code></pre></div>
+
+<h3 id="53-configure-docker-for-automatic-startup">5.3 Configure Docker for Automatic Startup</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Enable at boot</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>docker
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>containerd
+
+<span class="c1"># Check status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>docker
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-docker-working">✅ Checkpoint: Docker Working</h3>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>--version
+docker<span class="w"> </span>run<span class="w"> </span>hello-world<span class="w">   </span><span class="c1"># Should show success message</span>
+</code></pre></div>
+
+<p><strong>"Permission denied"?</strong> → <code>sudo usermod -aG docker $USER &amp;&amp; newgrp docker</code></p>
+<hr />
+<h2 id="6-mininet-and-open-vswitch">6. Mininet and Open vSwitch</h2>
+<h3 id="61-install-mininet">6.1 Install Mininet</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install Mininet from official Ubuntu repository</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>mininet
+
+<span class="c1"># Install Open vSwitch (required for Mininet)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-switch<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-common<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-testcontroller
+</code></pre></div>
+
+<h3 id="62-configure-and-start-open-vswitch">6.2 Configure and Start Open vSwitch</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Start OVS service</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Check status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Check OVS version</span>
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>--version
+</code></pre></div>
+
+<h3 id="63-test-mininet">6.3 Test Mininet</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Quick test (requires sudo)</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>--test<span class="w"> </span>pingall
+
+<span class="c1"># Extended test with custom topology</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>--topo<span class="w"> </span>tree,depth<span class="o">=</span><span class="m">2</span>,fanout<span class="o">=</span><span class="m">2</span><span class="w"> </span>--test<span class="w"> </span>pingall
+
+<span class="c1"># Cleanup after tests</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>-c
+</code></pre></div>
+
+<h3 id="64-install-additional-sdn-controller-optional">6.4 Install Additional SDN Controller (Optional)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Os-ken (modern fork of Ryu) - already installed via pip</span>
+<span class="c1"># Verify</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import os_ken; print(f&#39;OS-Ken version: {os_ken.__version__}&#39;)&quot;</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-mininet-working">✅ Checkpoint: Mininet Working</h3>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>mn<span class="w"> </span>--test<span class="w"> </span>pingall<span class="w">   </span><span class="c1"># All pings should pass</span>
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>show<span class="w">      </span><span class="c1"># Shows OVS configuration</span>
+</code></pre></div>
+
+<p><strong>Mininet errors?</strong> → <code>sudo mn -c</code> then retry</p>
+<hr />
+<h2 id="7-wiresharktshark">7. Wireshark/TShark</h2>
+<h3 id="71-install-wireshark-and-tshark">7.1 Install Wireshark and TShark</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install (TShark for CLI, Wireshark for GUI if you have X11)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tshark<span class="w"> </span>wireshark-common
+
+<span class="c1"># During installation, select &quot;Yes&quot; to allow</span>
+<span class="c1"># non-root users to capture packets</span>
+</code></pre></div>
+
+<h3 id="72-configure-wireshark-permissions">7.2 Configure Wireshark Permissions</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Add user to wireshark group</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>wireshark<span class="w"> </span><span class="nv">$USER</span>
+
+<span class="c1"># Configure capabilities for dumpcap</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+
+<span class="c1"># Verify</span>
+getcap<span class="w"> </span>/usr/bin/dumpcap
+
+<span class="c1"># Re-login or:</span>
+newgrp<span class="w"> </span>wireshark
+</code></pre></div>
+
+<h3 id="73-verify-tshark">7.3 Verify TShark</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check version</span>
+tshark<span class="w"> </span>--version<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-3
+
+<span class="c1"># Test capture (stop with Ctrl+C)</span>
+sudo<span class="w"> </span>tshark<span class="w"> </span>-i<span class="w"> </span>any<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-tshark-working">✅ Checkpoint: TShark Working</h3>
+<div class="codehilite"><pre><span></span><code>tshark<span class="w"> </span>--version
+<span class="c1"># Test capture (run ping localhost in another terminal):</span>
+tshark<span class="w"> </span>-i<span class="w"> </span>lo<span class="w"> </span>-c<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+
+<hr />
+<h2 id="8-additional-configuration">8. Additional Configuration</h2>
+<h3 id="81-configure-ip-forwarding-for-natrouting">8.1 Configure IP Forwarding (for NAT/Routing)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Temporary activation</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv6.conf.all.forwarding<span class="o">=</span><span class="m">1</span>
+
+<span class="c1"># Permanent activation</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv4.ip_forward=1&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv6.conf.all.forwarding=1&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+sudo<span class="w"> </span>sysctl<span class="w"> </span>--system
+</code></pre></div>
+
+<h3 id="82-disable-systemd-resolved-optional-for-custom-dns">8.2 Disable Systemd-Resolved (Optional, for custom DNS)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Only if you have conflicts with local DNS server (port 53)</span>
+<span class="c1"># sudo systemctl disable systemd-resolved</span>
+<span class="c1"># sudo systemctl stop systemd-resolved</span>
+<span class="c1"># sudo rm /etc/resolv.conf</span>
+<span class="c1"># echo &quot;nameserver 8.8.8.8&quot; | sudo tee /etc/resolv.conf</span>
+</code></pre></div>
+
+<h3 id="83-configure-ufw-firewall">8.3 Configure UFW Firewall</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install and basic configuration</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>ufw
+
+<span class="c1"># Allow SSH (important!)</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span>ssh
+
+<span class="c1"># Allow common ports for labs</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">8080</span>/tcp<span class="w">  </span><span class="c1"># Alternative HTTP</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">3333</span>/tcp<span class="w">  </span><span class="c1"># Custom protocols</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">4444</span>/tcp<span class="w">  </span><span class="c1"># Custom protocols</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">5555</span>/udp<span class="w">  </span><span class="c1"># UDP sensors</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">1025</span>/tcp<span class="w">  </span><span class="c1"># Educational SMTP</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">2121</span>/tcp<span class="w">  </span><span class="c1"># Alternative FTP</span>
+
+<span class="c1"># Enable (caution - make sure SSH is allowed!)</span>
+<span class="c1"># sudo ufw enable</span>
+</code></pre></div>
+
+<h3 id="84-create-directory-structure">8.4 Create Directory Structure</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Create working directories</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/networking/<span class="o">{</span>seminars,pcap,logs,scripts,docs<span class="o">}</span>
+
+<span class="c1"># Set permissions</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>~/networking
+</code></pre></div>
+
+<h3 id="85-configure-git-optional">8.5 Configure Git (Optional)</h3>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;Your Name&quot;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;email@example.com&quot;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>init.defaultBranch<span class="w"> </span>main
+</code></pre></div>
+
+<h3 id="86-useful-aliases-optional">8.6 Useful Aliases (Optional)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Add to ~/.bashrc</span>
+cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
+
+<span class="s"># === Networking Lab Aliases ===</span>
+<span class="s">alias ll=&#39;ls -alF&#39;</span>
+<span class="s">alias la=&#39;ls -A&#39;</span>
+<span class="s">alias l=&#39;ls -CF&#39;</span>
+
+<span class="s"># Docker</span>
+<span class="s">alias dc=&#39;docker compose&#39;</span>
+<span class="s">alias dps=&#39;docker ps --format &quot;table {{.Names}}\t{{.Status}}\t{{.Ports}}&quot;&#39;</span>
+<span class="s">alias dlog=&#39;docker logs -f&#39;</span>
+
+<span class="s"># Mininet</span>
+<span class="s">alias mnc=&#39;sudo mn -c&#39;  # Cleanup</span>
+<span class="s">alias mnt=&#39;sudo mn --test pingall&#39;</span>
+
+<span class="s"># Network</span>
+<span class="s">alias ports=&#39;sudo netstat -tulpn&#39;</span>
+<span class="s">alias myip=&#39;ip -4 addr show | grep -oP &quot;(?&lt;=inet\s)\d+(\.\d+){3}&quot; | grep -v 127.0.0.1&#39;</span>
+
+<span class="s"># Python</span>
+<span class="s">alias py=&#39;python3&#39;</span>
+<span class="s">alias pip=&#39;pip3&#39;</span>
+
+<span class="s"># Capture</span>
+<span class="s">alias tcap=&#39;sudo tcpdump -i any -nn&#39;</span>
+<span class="s">alias tcapw=&#39;sudo tcpdump -i any -w&#39;</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Apply</span>
+<span class="nb">source</span><span class="w"> </span>~/.bashrc
+</code></pre></div>
+
+<hr />
+<h2 id="9-transfer-and-organise-materials">9. Transfer and Organise Materials</h2>
+<h3 id="91-options-for-transferring-week1-14zip-archive">9.1 Options for Transferring WEEK1-14.zip Archive</h3>
+<p><strong>Option A: SCP from host machine</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># From the host machine terminal (Windows/Linux/macOS)</span>
+scp<span class="w"> </span>WEEK1-14.zip<span class="w"> </span>username@VM_IP:~/networking/seminars/
+</code></pre></div>
+
+<p><strong>Option B: VirtualBox Shared Folder</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. In VirtualBox: Settings → Shared Folders → Add</span>
+<span class="c1">#    - Folder Path: path to folder with archive</span>
+<span class="c1">#    - Folder Name: shared</span>
+<span class="c1">#    - ☑ Auto-mount</span>
+
+<span class="c1"># 2. In VM:</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>virtualbox-guest-utils<span class="w"> </span>virtualbox-guest-additions-iso
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>vboxsf<span class="w"> </span><span class="nv">$USER</span>
+<span class="c1"># Reboot required</span>
+
+<span class="c1"># 3. Copy the file</span>
+cp<span class="w"> </span>/media/sf_shared/WEEK1-14.zip<span class="w"> </span>~/networking/seminars/
+</code></pre></div>
+
+<p><strong>Option C: wget/curl (if you have a URL)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/networking/seminars
+wget<span class="w"> </span><span class="s2">&quot;ARCHIVE_URL&quot;</span><span class="w"> </span>-O<span class="w"> </span>WEEK1-14.zip
+<span class="c1"># or</span>
+curl<span class="w"> </span>-L<span class="w"> </span><span class="s2">&quot;ARCHIVE_URL&quot;</span><span class="w"> </span>-o<span class="w"> </span>WEEK1-14.zip
+</code></pre></div>
+
+<h3 id="92-extract-and-organise">9.2 Extract and Organise</h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/networking/seminars
+
+<span class="c1"># Extract</span>
+unzip<span class="w"> </span>WEEK1-14.zip
+
+<span class="c1"># Check structure</span>
+tree<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span><span class="w"> </span>WEEK*
+
+<span class="c1"># Set permissions for scripts</span>
+find<span class="w"> </span>.<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.sh&quot;</span><span class="w"> </span>-exec<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+find<span class="w"> </span>.<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.py&quot;</span><span class="w"> </span>-exec<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="10-verification-script">10. Verification Script</h2>
+<p>Create a script to verify the complete installation:</p>
+<div class="codehilite"><pre><span></span><code>cat<span class="w"> </span>&gt;<span class="w"> </span>~/networking/scripts/verify_installation.sh<span class="w"> </span><span class="s">&lt;&lt; &#39;SCRIPT&#39;</span>
+<span class="s">#!/bin/bash</span>
+<span class="s"># =============================================================================</span>
+<span class="s"># Installation Verification Script - Networking Lab Ubuntu 24.04</span>
+<span class="s"># =============================================================================</span>
+
+<span class="s">RED=&#39;\033[0;31m&#39;</span>
+<span class="s">GREEN=&#39;\033[0;32m&#39;</span>
+<span class="s">YELLOW=&#39;\033[1;33m&#39;</span>
+<span class="s">NC=&#39;\033[0m&#39; # No Color</span>
+
+<span class="s">echo &quot;╔══════════════════════════════════════════════════════════════╗&quot;</span>
+<span class="s">echo &quot;║     INSTALLATION VERIFICATION - NETWORKING LAB UBUNTU 24.04  ║&quot;</span>
+<span class="s">echo &quot;╚══════════════════════════════════════════════════════════════╝&quot;</span>
+<span class="s">echo &quot;&quot;</span>
+
+<span class="s">check() {</span>
+<span class="s">    if $1 &amp;&gt;/dev/null; then</span>
+<span class="s">        echo -e &quot;${GREEN}✓${NC} $2&quot;</span>
+<span class="s">        return 0</span>
+<span class="s">    else</span>
+<span class="s">        echo -e &quot;${RED}✗${NC} $2&quot;</span>
+<span class="s">        return 1</span>
+<span class="s">    fi</span>
+<span class="s">}</span>
+
+<span class="s">check_version() {</span>
+<span class="s">    version=$($1 2&gt;&amp;1 | head -1)</span>
+<span class="s">    echo -e &quot;${GREEN}✓${NC} $2: ${YELLOW}$version${NC}&quot;</span>
+<span class="s">}</span>
+
+<span class="s">ERRORS=0</span>
+
+<span class="s">echo &quot;═══ SYSTEM ═══&quot;</span>
+<span class="s">check_version &quot;cat /etc/os-release | grep PRETTY_NAME | cut -d&#39;\&quot;&#39; -f2&quot; &quot;OS&quot;</span>
+<span class="s">check_version &quot;uname -r&quot; &quot;Kernel&quot;</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ PYTHON ═══&quot;</span>
+<span class="s">check &quot;python3 --version&quot; &quot;Python3&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;pip3 --version&quot; &quot;Pip3&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ PYTHON LIBRARIES ═══&quot;</span>
+<span class="s">for lib in scapy dpkt flask requests dnslib dnspython paramiko pyftpdlib paho grpc colorama; do</span>
+<span class="s">    check &quot;python3 -c &#39;import $lib&#39;&quot; &quot;$lib&quot; || ((ERRORS++))</span>
+<span class="s">done</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ DOCKER ═══&quot;</span>
+<span class="s">check &quot;docker --version&quot; &quot;Docker Engine&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;docker compose version&quot; &quot;Docker Compose&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;docker ps&quot; &quot;Docker daemon running&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ MININET &amp; OVS ═══&quot;</span>
+<span class="s">check &quot;which mn&quot; &quot;Mininet&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;sudo ovs-vsctl --version&quot; &quot;Open vSwitch&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active openvswitch-switch&quot; &quot;OVS Service&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ NETWORK TOOLS ═══&quot;</span>
+<span class="s">for tool in tcpdump tshark nmap hping3 iperf3 netcat curl wget traceroute; do</span>
+<span class="s">    check &quot;which $tool&quot; &quot;$tool&quot; || ((ERRORS++))</span>
+<span class="s">done</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ PERMISSIONS ═══&quot;</span>
+<span class="s">check &quot;groups | grep -q docker&quot; &quot;User in docker group&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;groups | grep -q wireshark&quot; &quot;User in wireshark group&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ SERVICES ═══&quot;</span>
+<span class="s">check &quot;systemctl is-active ssh&quot; &quot;SSH&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active docker&quot; &quot;Docker&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active openvswitch-switch&quot; &quot;OVS&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ NETWORK ═══&quot;</span>
+<span class="s">echo &quot;Network interfaces:&quot;</span>
+<span class="s">ip -br addr show</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">if [ $ERRORS -eq 0 ]; then</span>
+<span class="s">    echo -e &quot;${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}&quot;</span>
+<span class="s">    echo -e &quot;${GREEN}║  ALL VERIFICATIONS PASSED SUCCESSFULLY!                      ║${NC}&quot;</span>
+<span class="s">    echo -e &quot;${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}&quot;</span>
+<span class="s">else</span>
+<span class="s">    echo -e &quot;${RED}╔══════════════════════════════════════════════════════════════╗${NC}&quot;</span>
+<span class="s">    echo -e &quot;${RED}║  $ERRORS ERRORS DETECTED - CHECK INSTALLATION!                  ║${NC}&quot;</span>
+<span class="s">    echo -e &quot;${RED}╚══════════════════════════════════════════════════════════════╝${NC}&quot;</span>
+<span class="s">fi</span>
+
+<span class="s">exit $ERRORS</span>
+<span class="s">SCRIPT</span>
+
+chmod<span class="w"> </span>+x<span class="w"> </span>~/networking/scripts/verify_installation.sh
+</code></pre></div>
+
+<p><strong>Run verification:</strong></p>
+<div class="codehilite"><pre><span></span><code>~/networking/scripts/verify_installation.sh
+</code></pre></div>
+
+<hr />
+<h2 id="what-to-do-if">🆘 What To Do If...</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Quick Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VM is slow</td>
+<td>Allocate more RAM (4GB+) and CPU (2+ cores)</td>
+</tr>
+<tr>
+<td>Out of disk space</td>
+<td><code>docker system prune -a</code> or extend disk</td>
+</tr>
+<tr>
+<td>Forgot password</td>
+<td>Boot recovery mode, <code>passwd username</code></td>
+</tr>
+<tr>
+<td>Docker won't start</td>
+<td><code>sudo systemctl restart docker</code></td>
+</tr>
+<tr>
+<td>Mininet errors</td>
+<td><code>sudo mn -c</code> (cleanup)</td>
+</tr>
+<tr>
+<td>No internet in VM</td>
+<td>Check NAT adapter, <code>sudo dhclient</code></td>
+</tr>
+<tr>
+<td>apt update errors</td>
+<td><code>ping 8.8.8.8</code> - if works, check DNS</td>
+</tr>
+<tr>
+<td>pip errors</td>
+<td>Add <code>--break-system-packages</code></td>
+</tr>
+<tr>
+<td>Port in use</td>
+<td><code>sudo ss -tulpn | grep PORT</code> then <code>kill PID</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-troubleshooting">11. Troubleshooting</h2>
+<h3 id="111-common-problems-and-solutions">11.1 Common Problems and Solutions</h3>
+<h4 id="docker-permission-denied">Docker: "permission denied"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: User is not in the docker group</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+<span class="c1"># Then logout/login or:</span>
+newgrp<span class="w"> </span>docker
+</code></pre></div>
+
+<h4 id="mininet-cannot-find-required-executable">Mininet: "Cannot find required executable..."</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: OVS is not running</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>openvswitch-switch
+sudo<span class="w"> </span>mn<span class="w"> </span>-c<span class="w">  </span><span class="c1"># Cleanup</span>
+</code></pre></div>
+
+<h4 id="tshark-permission-denied">TShark: "permission denied"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: Insufficient permissions</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>wireshark<span class="w"> </span><span class="nv">$USER</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+newgrp<span class="w"> </span>wireshark
+</code></pre></div>
+
+<h4 id="python-externally-managed-environment">Python: "externally-managed-environment"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: Ubuntu 24.04 protects system packages</span>
+<span class="c1"># Solution 1: Use --break-system-packages</span>
+pip3<span class="w"> </span>install<span class="w"> </span>package<span class="w"> </span>--break-system-packages
+
+<span class="c1"># Solution 2: Use venv (recommended for production projects)</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>~/venv
+<span class="nb">source</span><span class="w"> </span>~/venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>package
+</code></pre></div>
+
+<h4 id="python-cannot-uninstall-x-record-file-not-found">Python: "Cannot uninstall X, RECORD file not found"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: Conflict between packages installed by apt and pip</span>
+<span class="c1"># Solution: Add --ignore-installed</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>flask
+
+<span class="c1"># For multiple packages:</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>package1<span class="w"> </span>package2
+</code></pre></div>
+
+<h4 id="port-53-occupied-dns">Port 53 occupied (DNS)</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cause: systemd-resolved is using the port</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>systemd-resolved
+<span class="c1"># Or use a different port for custom DNS (e.g.: 5353)</span>
+</code></pre></div>
+
+<h4 id="mininet-cleanup">Mininet cleanup</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># After crash or errors, clean up with:</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>-c
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>--if-exists<span class="w"> </span>del-br<span class="w"> </span>ovs-br0
+sudo<span class="w"> </span>killall<span class="w"> </span>controller<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+
+<h3 id="112-useful-diagnostic-commands">11.2 Useful Diagnostic Commands</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check ports in use</span>
+sudo<span class="w"> </span>ss<span class="w"> </span>-tulpn
+sudo<span class="w"> </span>netstat<span class="w"> </span>-tulpn
+
+<span class="c1"># Check network processes</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;(python|docker|mn|ovs)&quot;</span>
+
+<span class="c1"># Check system logs</span>
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-xe
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>docker
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Check disk space</span>
+df<span class="w"> </span>-h
+
+<span class="c1"># Check memory</span>
+free<span class="w"> </span>-h
+
+<span class="c1"># Check connectivity</span>
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">8</span>.8.8.8
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span>google.com
+</code></pre></div>
+
+<hr />
+<h2 id="complete-commands-summary-all-in-one-script">Complete Commands Summary (All-in-One Script)</h2>
+<p>For convenience, all installation commands in a single block:</p>
+<div class="codehilite"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="c1"># RUN WITH: sudo bash install_networking_lab.sh</span>
+
+<span class="nb">set</span><span class="w"> </span>-e
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== System update ===&quot;</span>
+apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Essential packages ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>software-properties-common<span class="w"> </span>apt-transport-https<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ca-certificates<span class="w"> </span>gnupg<span class="w"> </span>lsb-release<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>git<span class="w"> </span>vim<span class="w"> </span>nano<span class="w"> </span>htop<span class="w"> </span>tree<span class="w"> </span>unzip<span class="w"> </span>zip<span class="w"> </span>jq<span class="w"> </span>make<span class="w"> </span>gcc<span class="w"> </span>g++
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Network tools ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client<span class="w"> </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping<span class="w"> </span>iptables<span class="w"> </span>iptables-persistent<span class="w"> </span>conntrack<span class="w"> </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Python ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-venv<span class="w"> </span>python3-dev<span class="w"> </span>python3-setuptools<span class="w"> </span>python3-wheel
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Python libraries ===&quot;</span>
+pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>scapy<span class="w"> </span>dpkt<span class="w"> </span>pyshark<span class="w"> </span>netifaces<span class="w"> </span>flask<span class="w"> </span>requests<span class="w"> </span>dnslib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>dnspython<span class="w"> </span>paramiko<span class="w"> </span>pyftpdlib<span class="w"> </span>paho-mqtt<span class="w"> </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf<span class="w"> </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil<span class="w"> </span>os-ken<span class="w"> </span>python-docx
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Docker ===&quot;</span>
+install<span class="w"> </span>-m<span class="w"> </span><span class="m">0755</span><span class="w"> </span>-d<span class="w"> </span>/etc/apt/keyrings
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://download.docker.com/linux/ubuntu/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+chmod<span class="w"> </span>a+r<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;deb [arch=</span><span class="k">$(</span>dpkg<span class="w"> </span>--print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu </span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2"> stable&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/docker.list<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+apt<span class="w"> </span>update
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>docker-ce<span class="w"> </span>docker-ce-cli<span class="w"> </span>containerd.io<span class="w"> </span>docker-buildx-plugin<span class="w"> </span>docker-compose-plugin
+systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>docker<span class="w"> </span>containerd
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Mininet &amp; OVS ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>mininet<span class="w"> </span>openvswitch-switch<span class="w"> </span>openvswitch-common<span class="w"> </span>openvswitch-testcontroller
+systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>openvswitch-switch
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Wireshark/TShark ===&quot;</span>
+<span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tshark<span class="w"> </span>wireshark-common
+setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/tcpdump
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Final configuration ===&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv4.ip_forward=1&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv6.conf.all.forwarding=1&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+sysctl<span class="w"> </span>--system
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== INSTALLATION COMPLETE ===&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Run the following commands manually as normal user:&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  sudo usermod -aG docker \$USER&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  sudo usermod -aG wireshark \$USER&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  newgrp docker&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  newgrp wireshark&quot;</span>
+</code></pre></div>
+
+<hr />
+<p><strong>Document generated for the Computer Networks course, ASE-CSIE Bucharest</strong></p>
+<hr>
+<p><em>Document generat pentru cursul de Rețele de Calculatoare, ASE-CSIE București</em></p>
+</body>
+</html>

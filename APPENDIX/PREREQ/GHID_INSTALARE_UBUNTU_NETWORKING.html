@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghid Instalare Ubuntu Networking</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fafafa;
+            color: #333;
+        }
+        h1, h2, h3 { color: #1a73e8; }
+        h1 { border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        h2 { border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #34a853; }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #1a73e8;
+            color: white;
+        }
+        tr:nth-child(even) { background: #f9f9f9; }
+        blockquote {
+            border-left: 4px solid #1a73e8;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: #e8f4fd;
+        }
+        .checkpoint {
+            background: #e8f5e9;
+            border-left: 4px solid #34a853;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        ul { padding-left: 25px; }
+        li { margin: 5px 0; }
+        a { color: #1a73e8; }
+    </style>
+</head>
+<body>
+<h1 id="ghid-complet-de-instalare-si-configurare">Ghid Complet de Instalare și Configurare</h1>
+<h2 id="ubuntu-server-2404-lts-pentru-seminariile-de-retele-de-calculatoare">Ubuntu Server 24.04 LTS pentru Seminariile de Rețele de Calculatoare</h2>
+<p><strong>Document generat:</strong> Ianuarie 2026<br />
+<strong>Platformă țintă:</strong> Ubuntu Server 24.04 LTS (VirtualBox VM)<br />
+<strong>Scop:</strong> Configurare completă pentru WEEK1–WEEK14 din cursul de Computer Networks</p>
+<hr />
+<h2 id="timp-estimat-instalare">⏱️ Timp Estimat Instalare</h2>
+<table>
+<thead>
+<tr>
+<th>Etapă</th>
+<th>Durată</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configurare VirtualBox</td>
+<td>15-20 min</td>
+<td>Include descărcare ISO</td>
+</tr>
+<tr>
+<td>Instalare Ubuntu Server</td>
+<td>20-30 min</td>
+<td>Proces semi-automat</td>
+</tr>
+<tr>
+<td>Actualizare sistem</td>
+<td>10-15 min</td>
+<td>Necesită internet</td>
+</tr>
+<tr>
+<td>Instrumente rețea</td>
+<td>5-10 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Python și biblioteci</td>
+<td>10-15 min</td>
+<td>pip install</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td>10-15 min</td>
+<td>Include configurare</td>
+</tr>
+<tr>
+<td>Mininet și OVS</td>
+<td>5-10 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Wireshark/TShark</td>
+<td>5 min</td>
+<td>apt install</td>
+</tr>
+<tr>
+<td>Verificare finală</td>
+<td>5 min</td>
+<td>Script inclus</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>90-120 min</strong></td>
+<td>Cu conexiune stabilă</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Sfat:</strong> Poți lăsa actualizările să ruleze în background și să te întorci după 30 minute.</p>
+</blockquote>
+<hr />
+<h2 id="cuprins">Cuprins</h2>
+<ol>
+<li><a href="#1-configurare-inițială-virtualbox">Configurare Inițială VirtualBox</a></li>
+<li><a href="#11-setări-recomandate-pentru-vm">1.1 Setări Recomandate pentru VM</a></li>
+<li><a href="#12-configurare-adaptoare-de-rețea-în-virtualbox">1.2 Configurare Adaptoare de Rețea</a></li>
+<li><a href="#13-activare-nested-virtualization-opțional-pentru-mininet-avansat">1.3 Activare Nested Virtualization</a></li>
+<li><a href="#14-instalare-virtualbox-guest-additions-cli">1.4 Instalare VirtualBox Guest Additions</a></li>
+<li><a href="#15-configurare-port-forwarding-pentru-ssh-cu-nat">1.5 Configurare Port Forwarding pentru SSH</a></li>
+<li><a href="#2-actualizare-sistem-și-pachete-esențiale">Actualizare Sistem și Pachete Esențiale</a></li>
+<li><a href="#3-instrumente-de-rețea">Instrumente de Rețea</a></li>
+<li><a href="#4-python-și-biblioteci">Python și Biblioteci</a></li>
+<li><a href="#5-docker-și-docker-compose">Docker și Docker Compose</a></li>
+<li><a href="#6-mininet-și-open-vswitch">Mininet și Open vSwitch</a></li>
+<li><a href="#7-wiresharktshark">Wireshark/TShark</a></li>
+<li><a href="#8-configurări-suplimentare">Configurări Suplimentare</a></li>
+<li><a href="#9-transfer-și-organizare-materiale">Transfer și Organizare Materiale</a></li>
+<li><a href="#10-script-de-verificare">Script de Verificare</a></li>
+<li><a href="#11-troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="1-configurare-initiala-virtualbox">1. Configurare Inițială VirtualBox</h2>
+<h3 id="11-setari-recomandate-pentru-vm">1.1 Setări Recomandate pentru VM</h3>
+<p>Înainte de instalarea Ubuntu, asigură-te că VM-ul are configurația corespunzătoare:</p>
+<table>
+<thead>
+<tr>
+<th>Parametru</th>
+<th>Valoare Minimă</th>
+<th>Valoare Recomandată</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAM</td>
+<td>2 GB</td>
+<td>4–8 GB</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>2 cores</td>
+<td>4 cores</td>
+</tr>
+<tr>
+<td>Disk</td>
+<td>25 GB</td>
+<td>50 GB</td>
+</tr>
+<tr>
+<td>Network Adapter 1</td>
+<td>NAT</td>
+<td>NAT (pentru acces internet)</td>
+</tr>
+<tr>
+<td>Network Adapter 2</td>
+<td>—</td>
+<td>Host-Only (pentru acces din host)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-configurare-adaptoare-de-retea-in-virtualbox">1.2 Configurare Adaptoare de Rețea în VirtualBox</h3>
+<div class="codehilite"><pre><span></span><code>Settings → Network:
+
+Adapter 1:
+  ☑ Enable Network Adapter
+  Attached to: NAT
+  (Pentru acces la internet din VM)
+
+Adapter 2:
+  ☑ Enable Network Adapter  
+  Attached to: Host-only Adapter
+  Name: vboxnet0 (sau crează unul nou)
+  (Pentru SSH și acces de pe mașina gazdă)
+</code></pre></div>
+
+<p><strong>Crearea unui Host-Only Network (dacă nu există):</strong></p>
+<div class="codehilite"><pre><span></span><code>VirtualBox → File → Host Network Manager → Create
+  - IPv4 Address: 192.168.56.1
+  - IPv4 Network Mask: 255.255.255.0
+  - ☑ Enable DHCP Server
+</code></pre></div>
+
+<h3 id="13-activare-nested-virtualization-optional-pentru-mininet-avansat">1.3 Activare Nested Virtualization (Opțional, pentru Mininet avansat)</h3>
+<blockquote>
+<p><strong>⚠️ NOTĂ IMPORTANTĂ:</strong>
+- Nested virtualization este <strong>opțională</strong> — seminariile funcționează și fără ea
+- VM-ul trebuie să fie <strong>oprit</strong> când rulezi comanda
+- Necesită CPU cu suport hardware VT-x (Intel) sau AMD-V (AMD)</p>
+</blockquote>
+<h4 id="pe-windows-powershell-ca-administrator">Pe Windows (PowerShell ca Administrator)</h4>
+<p><strong>Pas 1: Află numele exact al VM-ului</strong></p>
+<p>Deschide PowerShell ca Administrator și rulează:</p>
+<div class="codehilite"><pre><span></span><code><span class="c"># Listează toate VM-urile existente</span>
+<span class="p">&amp;</span> <span class="s2">&quot;C:\Program Files\Oracle\VirtualBox\VBoxManage.exe&quot;</span> <span class="n">list</span> <span class="n">vms</span>
+</code></pre></div>
+
+<p>Vei vedea output de forma:</p>
+<div class="codehilite"><pre><span></span><code>&quot;Ubuntu-Server-24&quot; {a1b2c3d4-e5f6-...}
+&quot;Windows10-Test&quot; {f7g8h9i0-j1k2-...}
+</code></pre></div>
+
+<p><strong>Pas 2: Activează nested virtualization</strong></p>
+<p>Folosește numele exact din lista de mai sus:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">&amp;</span> <span class="s2">&quot;C:\Program Files\Oracle\VirtualBox\VBoxManage.exe&quot;</span> <span class="n">modifyvm</span> <span class="s2">&quot;Ubuntu-Server-24&quot;</span> <span class="p">-</span><span class="n">-nested-hw-virt</span> <span class="n">on</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>💡 De ce trebuie calea completă?</strong>
+Pe Windows, <code>VBoxManage.exe</code> nu este adăugat automat în variabila de mediu PATH.
+Trebuie să folosești calea completă: <code>"C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"</code>
+Caracterul <code>&amp;</code> din PowerShell permite executarea unui program cu spații în cale.</p>
+</blockquote>
+<p><strong>Alternativă — Adăugare VirtualBox în PATH (permanentă):</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c"># Rulează o singură dată pentru a adăuga permanent în PATH</span>
+<span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s2">&quot;Path&quot;</span><span class="p">,</span> <span class="nv">$env:Path</span> <span class="p">+</span> <span class="s2">&quot;;C:\Program Files\Oracle\VirtualBox&quot;</span><span class="p">,</span> <span class="s2">&quot;User&quot;</span><span class="p">)</span>
+<span class="c"># Repornește PowerShell, apoi poți folosi direct:</span>
+<span class="n">VBoxManage</span> <span class="n">list</span> <span class="n">vms</span>
+</code></pre></div>
+
+<h4 id="pe-linuxmacos">Pe Linux/macOS</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Listează VM-urile</span>
+VBoxManage<span class="w"> </span>list<span class="w"> </span>vms
+
+<span class="c1"># Activează nested virtualization</span>
+VBoxManage<span class="w"> </span>modifyvm<span class="w"> </span><span class="s2">&quot;NumeVM&quot;</span><span class="w"> </span>--nested-hw-virt<span class="w"> </span>on
+</code></pre></div>
+
+<h4 id="verificare-activare">Verificare Activare</h4>
+<p>După pornirea VM-ului, verifică din interiorul Ubuntu:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verifică suport virtualizare</span>
+egrep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;(vmx|svm)&#39;</span><span class="w"> </span>/proc/cpuinfo
+<span class="c1"># Rezultat &gt; 0 înseamnă că nested virt funcționează</span>
+</code></pre></div>
+
+<h3 id="14-instalare-virtualbox-guest-additions-cli">1.4 Instalare VirtualBox Guest Additions (CLI)</h3>
+<p>Guest Additions oferă funcționalități importante: shared folders, clipboard partajat, rezoluție dinamică și performanță îmbunătățită.</p>
+<h4 id="metoda-1-de-pe-cd-ul-virtualbox-recomandata-versiune-actuala">Metoda 1: De pe CD-ul VirtualBox (Recomandată — versiune actuală)</h4>
+<p><strong>Pas 1: Instalează dependențele necesare</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>build-essential<span class="w"> </span>dkms<span class="w"> </span>linux-headers-<span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="w"> </span>-y
+</code></pre></div>
+
+<p><strong>Pas 2: Montează CD-ul Guest Additions</strong></p>
+<p>În fereastra VirtualBox a VM-ului:</p>
+<div class="codehilite"><pre><span></span><code>Devices → Insert Guest Additions CD image...
+</code></pre></div>
+
+<p><strong>Pas 3: Montează și rulează installer-ul</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Montează CD-ul</span>
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/cdrom<span class="w"> </span>/mnt
+
+<span class="c1"># Rulează installer-ul</span>
+sudo<span class="w"> </span>/mnt/VBoxLinuxAdditions.run
+</code></pre></div>
+
+<p><strong>Pas 4: Demontează și repornește</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>umount<span class="w"> </span>/mnt
+sudo<span class="w"> </span>reboot
+</code></pre></div>
+
+<p><strong>Pas 5: Verifică instalarea</strong></p>
+<div class="codehilite"><pre><span></span><code>lsmod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>vbox
+<span class="c1"># Trebuie să vezi: vboxguest, vboxsf, vboxvideo</span>
+</code></pre></div>
+
+<h4 id="metoda-2-din-repository-uri-ubuntu-mai-simpla-posibil-versiune-mai-veche">Metoda 2: Din Repository-uri Ubuntu (Mai simplă, posibil versiune mai veche)</h4>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>virtualbox-guest-utils<span class="w"> </span>virtualbox-guest-dkms<span class="w"> </span>-y
+sudo<span class="w"> </span>reboot
+</code></pre></div>
+
+<h4 id="troubleshooting-guest-additions">Troubleshooting Guest Additions</h4>
+<p><strong>Eroare kernel headers:</strong></p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-headers-generic<span class="w"> </span>-y
+</code></pre></div>
+
+<p><strong>Dacă <code>/dev/cdrom</code> nu există:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verifică device-ul disponibil</span>
+lsblk
+<span class="c1"># De obicei e /dev/sr0</span>
+sudo<span class="w"> </span>mount<span class="w"> </span>/dev/sr0<span class="w"> </span>/mnt
+</code></pre></div>
+
+<p><strong>Verificare finală:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verifică modulele încărcate</span>
+lsmod<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>vbox
+
+<span class="c1"># Verifică versiunea Guest Additions</span>
+VBoxControl<span class="w"> </span>--version
+</code></pre></div>
+
+<h3 id="15-configurare-port-forwarding-pentru-ssh-cu-nat">1.5 Configurare Port Forwarding pentru SSH (cu NAT)</h3>
+<p>Când folosești <strong>NAT</strong> ca adaptor de rețea, guest-ul nu este accesibil direct din host. Trebuie să configurezi <strong>Port Forwarding</strong> pentru a accesa SSH-ul.</p>
+<h4 id="configurare-in-virtualbox">Configurare în VirtualBox</h4>
+<p><strong>Pas 1:</strong> Cu VM-ul oprit sau în execuție, deschide:</p>
+<div class="codehilite"><pre><span></span><code>VM Settings → Network → Adapter 1 (NAT) → Advanced → Port Forwarding
+</code></pre></div>
+
+<p><strong>Pas 2:</strong> Click pe iconița <strong>+</strong> (Add new rule) și completează:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Protocol</th>
+<th>Host IP</th>
+<th>Host Port</th>
+<th>Guest IP</th>
+<th>Guest Port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH</td>
+<td>TCP</td>
+<td>127.0.0.1</td>
+<td>2222</td>
+<td>10.0.2.15</td>
+<td>22</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Notă:</strong> Poți lăsa <strong>Guest IP</strong> gol — VirtualBox va forwarda către orice IP din guest.</p>
+</blockquote>
+<p><strong>Pas 3:</strong> Click <strong>OK</strong> pentru a salva.</p>
+<h4 id="configurare-ssh-in-ubuntu-guest">Configurare SSH în Ubuntu Guest</h4>
+<p>Asigură-te că SSH-ul rulează în VM:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>ssh
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>ssh
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+</code></pre></div>
+
+<h4 id="conectare-din-windows">Conectare din Windows</h4>
+<p><strong>Opțiunea A: PowerShell / Command Prompt</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">ssh</span> <span class="n">utilizator</span><span class="nv">@127</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span> <span class="n">-p</span> <span class="n">2222</span>
+</code></pre></div>
+
+<p><strong>Opțiunea B: PuTTY</strong>
+- <strong>Host Name:</strong> <code>127.0.0.1</code>
+- <strong>Port:</strong> <code>2222</code>
+- <strong>Connection type:</strong> SSH</p>
+<p><strong>Opțiunea C: Windows Terminal</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">ssh</span> <span class="n">utilizator</span><span class="nv">@localhost</span> <span class="n">-p</span> <span class="n">2222</span>
+</code></pre></div>
+
+<h4 id="conectare-din-linuxmacos-de-pe-host">Conectare din Linux/macOS (de pe host)</h4>
+<div class="codehilite"><pre><span></span><code>ssh<span class="w"> </span>utilizator@127.0.0.1<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
+</code></pre></div>
+
+<h4 id="port-forwarding-suplimentar-optional">Port Forwarding Suplimentar (Opțional)</h4>
+<p>Pentru a accesa și alte servicii din VM, adaugă reguli suplimentare:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Protocol</th>
+<th>Host Port</th>
+<th>Guest Port</th>
+<th>Utilizare</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP</td>
+<td>TCP</td>
+<td>8080</td>
+<td>80</td>
+<td>Web server</td>
+</tr>
+<tr>
+<td>HTTPS</td>
+<td>TCP</td>
+<td>8443</td>
+<td>443</td>
+<td>Web server securizat</td>
+</tr>
+<tr>
+<td>Flask</td>
+<td>TCP</td>
+<td>5000</td>
+<td>5000</td>
+<td>Aplicații Python Flask</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>TCP</td>
+<td>3333</td>
+<td>3333</td>
+<td>Protocoale custom (WEEK4)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>⚠️ Alternativă:</strong> Dacă ai configurat <strong>Adapter 2 ca Host-Only</strong> (secțiunea 1.2), poți accesa VM-ul direct pe IP-ul din rețeaua 192.168.56.x fără port forwarding.</p>
+</blockquote>
+<hr />
+<h3 id="checkpoint-virtualbox-configurat">✅ Checkpoint: VirtualBox Configurat</h3>
+<p>Verifică înainte de a continua:
+- [ ] VM-ul pornește fără erori
+- [ ] Vezi ecranul de login Ubuntu
+- [ ] Guest Additions funcționează (rezoluție dinamică)</p>
+<p><strong>Problemă?</strong> → Vezi <a href="#11-troubleshooting">Troubleshooting</a></p>
+<hr />
+<h2 id="2-actualizare-sistem-si-pachete-esentiale">2. Actualizare Sistem și Pachete Esențiale</h2>
+<h3 id="21-prima-conectare-si-actualizare">2.1 Prima Conectare și Actualizare</h3>
+<p>După instalarea Ubuntu Server și prima autentificare:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Actualizare completă a sistemului</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+
+<span class="c1"># Instalare pachete esențiale de bază</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>build-essential<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>software-properties-common<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-transport-https<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ca-certificates<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>gnupg<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>lsb-release<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>curl<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>wget<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>git<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>vim<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nano<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>htop<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>tree<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>unzip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>zip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>jq<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>make<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>gcc<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>g++
+</code></pre></div>
+
+<h3 id="22-configurare-localizare-si-timezone">2.2 Configurare Localizare și Timezone</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Setare timezone București</span>
+sudo<span class="w"> </span>timedatectl<span class="w"> </span>set-timezone<span class="w"> </span>Europe/Bucharest
+
+<span class="c1"># Verificare</span>
+timedatectl
+
+<span class="c1"># Configurare locales (opțional)</span>
+sudo<span class="w"> </span>locale-gen<span class="w"> </span>en_GB.UTF-8
+sudo<span class="w"> </span>update-locale<span class="w"> </span><span class="nv">LANG</span><span class="o">=</span>en_GB.UTF-8
+</code></pre></div>
+
+<h3 id="23-configurare-ssh-pentru-acces-remote">2.3 Configurare SSH pentru Acces Remote</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Instalare OpenSSH Server (dacă nu e instalat)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>openssh-server
+
+<span class="c1"># Pornire și activare la boot</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>ssh
+
+<span class="c1"># Verificare status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>ssh
+
+<span class="c1"># Afișare IP pentru conectare</span>
+ip<span class="w"> </span>addr<span class="w"> </span>show
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-sistem-actualizat">✅ Checkpoint: Sistem Actualizat</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verificare rapidă</span>
+cat<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>VERSION
+<span class="c1"># Trebuie: VERSION=&quot;24.04...&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="3-instrumente-de-retea">3. Instrumente de Rețea</h2>
+<h3 id="31-pachete-esentiale-de-networking">3.1 Pachete Esențiale de Networking</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Diagnosticare de bază</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois
+
+<span class="c1"># Conectivitate și transfer</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client
+
+<span class="c1"># Monitorizare trafic</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon
+
+<span class="c1"># Scanare și securitate</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping
+
+<span class="c1"># Firewall</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iptables<span class="w"> </span>conntrack
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iptables-persistent<span class="w">  </span><span class="c1"># Va cere confirmare pentru salvare reguli</span>
+
+<span class="c1"># Ethernet bridging și VLAN</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+</code></pre></div>
+
+<p>Sau toate într-o singură comandă (fără comentarii):</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>iptables<span class="w"> </span>iptables-persistent<span class="w"> </span>conntrack<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+</code></pre></div>
+
+<h3 id="32-configurare-permisiuni-pentru-captura-de-pachete">3.2 Configurare Permisiuni pentru Captura de Pachete</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Permite tcpdump fără sudo</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/tcpdump
+
+<span class="c1"># Verificare</span>
+getcap<span class="w"> </span>/usr/bin/tcpdump
+</code></pre></div>
+
+<hr />
+<h2 id="4-python-si-biblioteci">4. Python și Biblioteci</h2>
+<h3 id="41-instalare-python-3-si-pip">4.1 Instalare Python 3 și Pip</h3>
+<p>Ubuntu 24.04 vine cu Python 3.12. Instalăm și componentele suplimentare:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-pip<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-venv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-setuptools<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>python3-wheel
+</code></pre></div>
+
+<h3 id="42-biblioteci-python-pentru-seminariile-week1week14">4.2 Biblioteci Python pentru Seminariile WEEK1–WEEK14</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Flag-urile necesare în Ubuntu 24.04:</span>
+<span class="c1">#   --break-system-packages  = permite instalarea în mediul sistem</span>
+<span class="c1">#   --ignore-installed       = evită conflicte cu pachetele instalate de apt/debian</span>
+<span class="c1">#</span>
+<span class="c1"># Warning-ul despre &quot;Running pip as root&quot; poate fi ignorat în contextul unui VM de laborator</span>
+
+<span class="c1"># Manipulare pachete și sniffing (WEEK1, WEEK3, WEEK6, WEEK7, WEEK13)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>scapy
+
+<span class="c1"># Parsare pcap (WEEK1, WEEK2)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>dpkt<span class="w"> </span>pyshark
+
+<span class="c1"># Informații interfețe rețea (WEEK2)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>netifaces
+
+<span class="c1"># HTTP și REST API (WEEK8, WEEK10)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>flask<span class="w"> </span>requests
+
+<span class="c1"># DNS (WEEK10, WEEK11, WEEK12)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>dnslib<span class="w"> </span>dnspython
+
+<span class="c1"># SSH și SFTP (WEEK10, WEEK11)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>paramiko
+
+<span class="c1"># FTP Server (WEEK9, WEEK10, WEEK11)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>pyftpdlib
+
+<span class="c1"># MQTT pentru IoT (WEEK13)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>paho-mqtt
+
+<span class="c1"># gRPC pentru RPC avansat (WEEK12)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf
+
+<span class="c1"># Utilitare</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil
+
+<span class="c1"># SDN Controller (WEEK6)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>os-ken
+
+<span class="c1"># Documentație (opțional)</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>python-docx
+</code></pre></div>
+
+<p>Sau toate într-o singură comandă:</p>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>scapy<span class="w"> </span>dpkt<span class="w"> </span>pyshark<span class="w"> </span>netifaces<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>flask<span class="w"> </span>requests<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>dnslib<span class="w"> </span>dnspython<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>paramiko<span class="w"> </span>pyftpdlib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>paho-mqtt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>os-ken<span class="w"> </span>python-docx
+</code></pre></div>
+
+<blockquote>
+<p><strong>💡 Notă:</strong> Flag-ul <code>--ignore-installed</code> rezolvă erorile de tipul <code>Cannot uninstall X, RECORD file not found</code> care apar când pip încearcă să actualizeze pachete instalate de sistemul de operare (apt/debian).</p>
+</blockquote>
+<h3 id="43-verificare-instalare-python">4.3 Verificare Instalare Python</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verificare versiuni</span>
+python3<span class="w"> </span>--version
+pip3<span class="w"> </span>--version
+
+<span class="c1"># Testare import biblioteci esențiale</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import scapy.all</span>
+<span class="s2">import socket</span>
+<span class="s2">import ipaddress</span>
+<span class="s2">import struct</span>
+<span class="s2">import threading</span>
+<span class="s2">import scapy</span>
+<span class="s2">print(&#39;✓ Toate modulele standard funcționează&#39;)</span>
+<span class="s2">print(f&#39;  Scapy version: {scapy.VERSION}&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+
+<p>Verificare rapidă pentru toate bibliotecile instalate:</p>
+<div class="codehilite"><pre><span></span><code>python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">libs = [&#39;scapy&#39;, &#39;dpkt&#39;, &#39;flask&#39;, &#39;requests&#39;, &#39;dns&#39;, &#39;paramiko&#39;, &#39;pyftpdlib&#39;, &#39;paho&#39;, &#39;grpc&#39;, &#39;colorama&#39;]</span>
+<span class="s2">for lib in libs:</span>
+<span class="s2">    try:</span>
+<span class="s2">        __import__(lib)</span>
+<span class="s2">        print(f&#39;✓ {lib}&#39;)</span>
+<span class="s2">    except ImportError:</span>
+<span class="s2">        print(f&#39;✗ {lib} - LIPSEȘTE&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-python-configurat">✅ Checkpoint: Python Configurat</h3>
+<div class="codehilite"><pre><span></span><code>python3<span class="w"> </span>--version<span class="w">        </span><span class="c1"># Python 3.12+</span>
+pip3<span class="w"> </span>--version<span class="w">           </span><span class="c1"># pip funcțional</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import scapy; import flask; print(&#39;OK&#39;)&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="5-docker-si-docker-compose">5. Docker și Docker Compose</h2>
+<h3 id="51-instalare-docker-engine">5.1 Instalare Docker Engine</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Eliminare versiuni vechi (dacă există)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>remove<span class="w"> </span>-y<span class="w"> </span>docker<span class="w"> </span>docker-engine<span class="w"> </span>docker.io<span class="w"> </span>containerd<span class="w"> </span>runc<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+
+<span class="c1"># Adăugare repository oficial Docker</span>
+sudo<span class="w"> </span>install<span class="w"> </span>-m<span class="w"> </span><span class="m">0755</span><span class="w"> </span>-d<span class="w"> </span>/etc/apt/keyrings
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://download.docker.com/linux/ubuntu/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+sudo<span class="w"> </span>chmod<span class="w"> </span>a+r<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+
+<span class="nb">echo</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">&quot;deb [arch=</span><span class="k">$(</span>dpkg<span class="w"> </span>--print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \</span>
+<span class="s2">  </span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2"> stable&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/docker.list<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+
+<span class="c1"># Instalare Docker</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>docker-ce<span class="w"> </span>docker-ce-cli<span class="w"> </span>containerd.io<span class="w"> </span>docker-buildx-plugin<span class="w"> </span>docker-compose-plugin
+
+<span class="c1"># Verificare instalare</span>
+sudo<span class="w"> </span>docker<span class="w"> </span>--version
+sudo<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>version
+</code></pre></div>
+
+<h3 id="52-configurare-docker-pentru-utilizator-non-root">5.2 Configurare Docker pentru Utilizator Non-Root</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Adăugare utilizator curent în grupul docker</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+
+<span class="c1"># Activare modificări (sau relogin)</span>
+newgrp<span class="w"> </span>docker
+
+<span class="c1"># Verificare (trebuie să funcționeze fără sudo)</span>
+docker<span class="w"> </span>run<span class="w"> </span>hello-world
+</code></pre></div>
+
+<h3 id="53-configurare-docker-pentru-pornire-automata">5.3 Configurare Docker pentru Pornire Automată</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Activare la boot</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>docker
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>containerd
+
+<span class="c1"># Verificare status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>docker
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-docker-functional">✅ Checkpoint: Docker Funcțional</h3>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>--version
+docker<span class="w"> </span>run<span class="w"> </span>hello-world<span class="w">   </span><span class="c1"># Trebuie să afișeze mesaj succes</span>
+</code></pre></div>
+
+<p><strong>"Permission denied"?</strong> → <code>sudo usermod -aG docker $USER &amp;&amp; newgrp docker</code></p>
+<hr />
+<h2 id="6-mininet-si-open-vswitch">6. Mininet și Open vSwitch</h2>
+<h3 id="61-instalare-mininet">6.1 Instalare Mininet</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Instalare Mininet din repository oficial Ubuntu</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>mininet
+
+<span class="c1"># Instalare Open vSwitch (necesar pentru Mininet)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-switch<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-common<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>openvswitch-testcontroller
+</code></pre></div>
+
+<h3 id="62-configurare-si-pornire-open-vswitch">6.2 Configurare și Pornire Open vSwitch</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Pornire serviciu OVS</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Verificare status</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>status<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Verificare versiune OVS</span>
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>--version
+</code></pre></div>
+
+<h3 id="63-testare-mininet">6.3 Testare Mininet</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Test rapid (necesită sudo)</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>--test<span class="w"> </span>pingall
+
+<span class="c1"># Test extins cu topologie personalizată</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>--topo<span class="w"> </span>tree,depth<span class="o">=</span><span class="m">2</span>,fanout<span class="o">=</span><span class="m">2</span><span class="w"> </span>--test<span class="w"> </span>pingall
+
+<span class="c1"># Curățare după teste</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>-c
+</code></pre></div>
+
+<h3 id="64-instalare-controler-sdn-suplimentar-optional">6.4 Instalare Controler SDN Suplimentar (Opțional)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Os-ken (fork modern al Ryu) - deja instalat via pip</span>
+<span class="c1"># Verificare</span>
+python3<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import os_ken; print(f&#39;OS-Ken version: {os_ken.__version__}&#39;)&quot;</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-mininet-functional">✅ Checkpoint: Mininet Funcțional</h3>
+<div class="codehilite"><pre><span></span><code>sudo<span class="w"> </span>mn<span class="w"> </span>--test<span class="w"> </span>pingall<span class="w">   </span><span class="c1"># Trebuie să treacă toate ping-urile</span>
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>show<span class="w">      </span><span class="c1"># Afișează configurația OVS</span>
+</code></pre></div>
+
+<p><strong>Erori Mininet?</strong> → <code>sudo mn -c</code> apoi reîncearcă</p>
+<hr />
+<h2 id="7-wiresharktshark">7. Wireshark/TShark</h2>
+<h3 id="71-instalare-wireshark-si-tshark">7.1 Instalare Wireshark și TShark</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Instalare (TShark pentru CLI, Wireshark pentru GUI dacă ai X11)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tshark<span class="w"> </span>wireshark-common
+
+<span class="c1"># În timpul instalării, selectează &quot;Yes&quot; pentru a permite</span>
+<span class="c1"># utilizatorilor non-root să captureze pachete</span>
+</code></pre></div>
+
+<h3 id="72-configurare-permisiuni-wireshark">7.2 Configurare Permisiuni Wireshark</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Adăugare utilizator în grupul wireshark</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>wireshark<span class="w"> </span><span class="nv">$USER</span>
+
+<span class="c1"># Configurare capabilities pentru dumpcap</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+
+<span class="c1"># Verificare</span>
+getcap<span class="w"> </span>/usr/bin/dumpcap
+
+<span class="c1"># Relogin sau:</span>
+newgrp<span class="w"> </span>wireshark
+</code></pre></div>
+
+<h3 id="73-verificare-tshark">7.3 Verificare TShark</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verificare versiune</span>
+tshark<span class="w"> </span>--version<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-3
+
+<span class="c1"># Test captură (oprește cu Ctrl+C)</span>
+sudo<span class="w"> </span>tshark<span class="w"> </span>-i<span class="w"> </span>any<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+
+<hr />
+<h3 id="checkpoint-tshark-functional">✅ Checkpoint: TShark Funcțional</h3>
+<div class="codehilite"><pre><span></span><code>tshark<span class="w"> </span>--version
+<span class="c1"># Test captură (rulează ping localhost în alt terminal):</span>
+tshark<span class="w"> </span>-i<span class="w"> </span>lo<span class="w"> </span>-c<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+
+<hr />
+<h2 id="8-configurari-suplimentare">8. Configurări Suplimentare</h2>
+<h3 id="81-configurare-ip-forwarding-pentru-natrouting">8.1 Configurare IP Forwarding (pentru NAT/Routing)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Activare temporară</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv6.conf.all.forwarding<span class="o">=</span><span class="m">1</span>
+
+<span class="c1"># Activare permanentă</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv4.ip_forward=1&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv6.conf.all.forwarding=1&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+sudo<span class="w"> </span>sysctl<span class="w"> </span>--system
+</code></pre></div>
+
+<h3 id="82-dezactivare-systemd-resolved-optional-pentru-dns-custom">8.2 Dezactivare Systemd-Resolved (Opțional, pentru DNS custom)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Doar dacă ai conflicte cu serverul DNS local (port 53)</span>
+<span class="c1"># sudo systemctl disable systemd-resolved</span>
+<span class="c1"># sudo systemctl stop systemd-resolved</span>
+<span class="c1"># sudo rm /etc/resolv.conf</span>
+<span class="c1"># echo &quot;nameserver 8.8.8.8&quot; | sudo tee /etc/resolv.conf</span>
+</code></pre></div>
+
+<h3 id="83-configurare-firewall-ufw">8.3 Configurare Firewall UFW</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Instalare și configurare de bază</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>ufw
+
+<span class="c1"># Permitere SSH (important!)</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span>ssh
+
+<span class="c1"># Permitere porturi comune pentru laboratoare</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">8080</span>/tcp<span class="w">  </span><span class="c1"># HTTP alternativ</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">3333</span>/tcp<span class="w">  </span><span class="c1"># Protocoale custom</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">4444</span>/tcp<span class="w">  </span><span class="c1"># Protocoale custom</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">5555</span>/udp<span class="w">  </span><span class="c1"># UDP sensors</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">1025</span>/tcp<span class="w">  </span><span class="c1"># SMTP educational</span>
+sudo<span class="w"> </span>ufw<span class="w"> </span>allow<span class="w"> </span><span class="m">2121</span>/tcp<span class="w">  </span><span class="c1"># FTP alternativ</span>
+
+<span class="c1"># Activare (atenție - asigură-te că SSH e permis!)</span>
+<span class="c1"># sudo ufw enable</span>
+</code></pre></div>
+
+<h3 id="84-creare-structura-directoare">8.4 Creare Structură Directoare</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Creare directoare de lucru</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/networking/<span class="o">{</span>seminars,pcap,logs,scripts,docs<span class="o">}</span>
+
+<span class="c1"># Setare permisiuni</span>
+chmod<span class="w"> </span><span class="m">755</span><span class="w"> </span>~/networking
+</code></pre></div>
+
+<h3 id="85-configurare-git-optional">8.5 Configurare Git (Opțional)</h3>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;Numele Tău&quot;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;email@example.com&quot;</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>init.defaultBranch<span class="w"> </span>main
+</code></pre></div>
+
+<h3 id="86-alias-uri-utile-optional">8.6 Alias-uri Utile (Opțional)</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Adăugare în ~/.bashrc</span>
+cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
+
+<span class="s"># === Alias-uri Networking Lab ===</span>
+<span class="s">alias ll=&#39;ls -alF&#39;</span>
+<span class="s">alias la=&#39;ls -A&#39;</span>
+<span class="s">alias l=&#39;ls -CF&#39;</span>
+
+<span class="s"># Docker</span>
+<span class="s">alias dc=&#39;docker compose&#39;</span>
+<span class="s">alias dps=&#39;docker ps --format &quot;table {{.Names}}\t{{.Status}}\t{{.Ports}}&quot;&#39;</span>
+<span class="s">alias dlog=&#39;docker logs -f&#39;</span>
+
+<span class="s"># Mininet</span>
+<span class="s">alias mnc=&#39;sudo mn -c&#39;  # Cleanup</span>
+<span class="s">alias mnt=&#39;sudo mn --test pingall&#39;</span>
+
+<span class="s"># Network</span>
+<span class="s">alias ports=&#39;sudo netstat -tulpn&#39;</span>
+<span class="s">alias myip=&#39;ip -4 addr show | grep -oP &quot;(?&lt;=inet\s)\d+(\.\d+){3}&quot; | grep -v 127.0.0.1&#39;</span>
+
+<span class="s"># Python</span>
+<span class="s">alias py=&#39;python3&#39;</span>
+<span class="s">alias pip=&#39;pip3&#39;</span>
+
+<span class="s"># Capture</span>
+<span class="s">alias tcap=&#39;sudo tcpdump -i any -nn&#39;</span>
+<span class="s">alias tcapw=&#39;sudo tcpdump -i any -w&#39;</span>
+<span class="s">EOF</span>
+
+<span class="c1"># Aplicare</span>
+<span class="nb">source</span><span class="w"> </span>~/.bashrc
+</code></pre></div>
+
+<hr />
+<h2 id="9-transfer-si-organizare-materiale">9. Transfer și Organizare Materiale</h2>
+<h3 id="91-optiuni-de-transfer-al-arhivei-week1-14zip">9.1 Opțiuni de Transfer al Arhivei WEEK1-14.zip</h3>
+<p><strong>Opțiunea A: SCP din mașina gazdă</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Din terminalul mașinii gazdă (Windows/Linux/macOS)</span>
+scp<span class="w"> </span>WEEK1-14.zip<span class="w"> </span>utilizator@IP_VM:~/networking/seminars/
+</code></pre></div>
+
+<p><strong>Opțiunea B: Shared Folder VirtualBox</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. În VirtualBox: Settings → Shared Folders → Add</span>
+<span class="c1">#    - Folder Path: calea către folderul cu arhiva</span>
+<span class="c1">#    - Folder Name: shared</span>
+<span class="c1">#    - ☑ Auto-mount</span>
+
+<span class="c1"># 2. În VM:</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>virtualbox-guest-utils<span class="w"> </span>virtualbox-guest-additions-iso
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>vboxsf<span class="w"> </span><span class="nv">$USER</span>
+<span class="c1"># Reboot necesar</span>
+
+<span class="c1"># 3. Copiază fișierul</span>
+cp<span class="w"> </span>/media/sf_shared/WEEK1-14.zip<span class="w"> </span>~/networking/seminars/
+</code></pre></div>
+
+<p><strong>Opțiunea C: wget/curl (dacă ai URL)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/networking/seminars
+wget<span class="w"> </span><span class="s2">&quot;URL_ARHIVĂ&quot;</span><span class="w"> </span>-O<span class="w"> </span>WEEK1-14.zip
+<span class="c1"># sau</span>
+curl<span class="w"> </span>-L<span class="w"> </span><span class="s2">&quot;URL_ARHIVĂ&quot;</span><span class="w"> </span>-o<span class="w"> </span>WEEK1-14.zip
+</code></pre></div>
+
+<h3 id="92-dezarhivare-si-organizare">9.2 Dezarhivare și Organizare</h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>~/networking/seminars
+
+<span class="c1"># Dezarhivare</span>
+unzip<span class="w"> </span>WEEK1-14.zip
+
+<span class="c1"># Verificare structură</span>
+tree<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span><span class="w"> </span>WEEK*
+
+<span class="c1"># Setare permisiuni pentru scripturi</span>
+find<span class="w"> </span>.<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.sh&quot;</span><span class="w"> </span>-exec<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+find<span class="w"> </span>.<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.py&quot;</span><span class="w"> </span>-exec<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span><span class="o">{}</span><span class="w"> </span><span class="se">\;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="10-script-de-verificare">10. Script de Verificare</h2>
+<p>Creează un script pentru verificarea instalării complete:</p>
+<div class="codehilite"><pre><span></span><code>cat<span class="w"> </span>&gt;<span class="w"> </span>~/networking/scripts/verify_installation.sh<span class="w"> </span><span class="s">&lt;&lt; &#39;SCRIPT&#39;</span>
+<span class="s">#!/bin/bash</span>
+<span class="s"># =============================================================================</span>
+<span class="s"># Script de Verificare Instalare - Networking Lab Ubuntu 24.04</span>
+<span class="s"># =============================================================================</span>
+
+<span class="s">RED=&#39;\033[0;31m&#39;</span>
+<span class="s">GREEN=&#39;\033[0;32m&#39;</span>
+<span class="s">YELLOW=&#39;\033[1;33m&#39;</span>
+<span class="s">NC=&#39;\033[0m&#39; # No Color</span>
+
+<span class="s">echo &quot;╔══════════════════════════════════════════════════════════════╗&quot;</span>
+<span class="s">echo &quot;║     VERIFICARE INSTALARE - NETWORKING LAB UBUNTU 24.04       ║&quot;</span>
+<span class="s">echo &quot;╚══════════════════════════════════════════════════════════════╝&quot;</span>
+<span class="s">echo &quot;&quot;</span>
+
+<span class="s">check() {</span>
+<span class="s">    if $1 &amp;&gt;/dev/null; then</span>
+<span class="s">        echo -e &quot;${GREEN}✓${NC} $2&quot;</span>
+<span class="s">        return 0</span>
+<span class="s">    else</span>
+<span class="s">        echo -e &quot;${RED}✗${NC} $2&quot;</span>
+<span class="s">        return 1</span>
+<span class="s">    fi</span>
+<span class="s">}</span>
+
+<span class="s">check_version() {</span>
+<span class="s">    version=$($1 2&gt;&amp;1 | head -1)</span>
+<span class="s">    echo -e &quot;${GREEN}✓${NC} $2: ${YELLOW}$version${NC}&quot;</span>
+<span class="s">}</span>
+
+<span class="s">ERRORS=0</span>
+
+<span class="s">echo &quot;═══ SISTEM ═══&quot;</span>
+<span class="s">check_version &quot;cat /etc/os-release | grep PRETTY_NAME | cut -d&#39;\&quot;&#39; -f2&quot; &quot;OS&quot;</span>
+<span class="s">check_version &quot;uname -r&quot; &quot;Kernel&quot;</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ PYTHON ═══&quot;</span>
+<span class="s">check &quot;python3 --version&quot; &quot;Python3&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;pip3 --version&quot; &quot;Pip3&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ BIBLIOTECI PYTHON ═══&quot;</span>
+<span class="s">for lib in scapy dpkt flask requests dnslib dnspython paramiko pyftpdlib paho grpc colorama; do</span>
+<span class="s">    check &quot;python3 -c &#39;import $lib&#39;&quot; &quot;$lib&quot; || ((ERRORS++))</span>
+<span class="s">done</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ DOCKER ═══&quot;</span>
+<span class="s">check &quot;docker --version&quot; &quot;Docker Engine&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;docker compose version&quot; &quot;Docker Compose&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;docker ps&quot; &quot;Docker daemon running&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ MININET &amp; OVS ═══&quot;</span>
+<span class="s">check &quot;which mn&quot; &quot;Mininet&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;sudo ovs-vsctl --version&quot; &quot;Open vSwitch&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active openvswitch-switch&quot; &quot;OVS Service&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ INSTRUMENTE REȚEA ═══&quot;</span>
+<span class="s">for tool in tcpdump tshark nmap hping3 iperf3 netcat curl wget traceroute; do</span>
+<span class="s">    check &quot;which $tool&quot; &quot;$tool&quot; || ((ERRORS++))</span>
+<span class="s">done</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ PERMISIUNI ═══&quot;</span>
+<span class="s">check &quot;groups | grep -q docker&quot; &quot;User in docker group&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;groups | grep -q wireshark&quot; &quot;User in wireshark group&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ SERVICII ═══&quot;</span>
+<span class="s">check &quot;systemctl is-active ssh&quot; &quot;SSH&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active docker&quot; &quot;Docker&quot; || ((ERRORS++))</span>
+<span class="s">check &quot;systemctl is-active openvswitch-switch&quot; &quot;OVS&quot; || ((ERRORS++))</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">echo &quot;═══ REȚEA ═══&quot;</span>
+<span class="s">echo &quot;Interfețe de rețea:&quot;</span>
+<span class="s">ip -br addr show</span>
+
+<span class="s">echo &quot;&quot;</span>
+<span class="s">if [ $ERRORS -eq 0 ]; then</span>
+<span class="s">    echo -e &quot;${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}&quot;</span>
+<span class="s">    echo -e &quot;${GREEN}║  TOATE VERIFICĂRILE AU TRECUT CU SUCCES!                     ║${NC}&quot;</span>
+<span class="s">    echo -e &quot;${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}&quot;</span>
+<span class="s">else</span>
+<span class="s">    echo -e &quot;${RED}╔══════════════════════════════════════════════════════════════╗${NC}&quot;</span>
+<span class="s">    echo -e &quot;${RED}║  $ERRORS ERORI DETECTATE - VERIFICĂ INSTALAREA!                 ║${NC}&quot;</span>
+<span class="s">    echo -e &quot;${RED}╚══════════════════════════════════════════════════════════════╝${NC}&quot;</span>
+<span class="s">fi</span>
+
+<span class="s">exit $ERRORS</span>
+<span class="s">SCRIPT</span>
+
+chmod<span class="w"> </span>+x<span class="w"> </span>~/networking/scripts/verify_installation.sh
+</code></pre></div>
+
+<p><strong>Rulare verificare:</strong></p>
+<div class="codehilite"><pre><span></span><code>~/networking/scripts/verify_installation.sh
+</code></pre></div>
+
+<hr />
+<h2 id="ce-faci-daca">🆘 Ce Faci Dacă...</h2>
+<table>
+<thead>
+<tr>
+<th>Situație</th>
+<th>Soluție Rapidă</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VM-ul e lent</td>
+<td>Alocă mai multă RAM (4GB+) și CPU (2+ cores)</td>
+</tr>
+<tr>
+<td>Lipsă spațiu disk</td>
+<td><code>docker system prune -a</code> sau extinde disk-ul</td>
+</tr>
+<tr>
+<td>Parola uitată</td>
+<td>Boot recovery mode, <code>passwd username</code></td>
+</tr>
+<tr>
+<td>Docker nu pornește</td>
+<td><code>sudo systemctl restart docker</code></td>
+</tr>
+<tr>
+<td>Mininet erori</td>
+<td><code>sudo mn -c</code> (cleanup)</td>
+</tr>
+<tr>
+<td>Fără internet în VM</td>
+<td>Verifică NAT adapter, <code>sudo dhclient</code></td>
+</tr>
+<tr>
+<td>apt update erori</td>
+<td><code>ping 8.8.8.8</code> - dacă merge, verifică DNS</td>
+</tr>
+<tr>
+<td>pip erori</td>
+<td>Adaugă <code>--break-system-packages</code></td>
+</tr>
+<tr>
+<td>Port ocupat</td>
+<td><code>sudo ss -tulpn | grep PORT</code> apoi <code>kill PID</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-troubleshooting">11. Troubleshooting</h2>
+<h3 id="111-probleme-comune-si-solutii">11.1 Probleme Comune și Soluții</h3>
+<h4 id="docker-permission-denied">Docker: "permission denied"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: Utilizatorul nu e în grupul docker</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>docker<span class="w"> </span><span class="nv">$USER</span>
+<span class="c1"># Apoi logout/login sau:</span>
+newgrp<span class="w"> </span>docker
+</code></pre></div>
+
+<h4 id="mininet-cannot-find-required-executable">Mininet: "Cannot find required executable..."</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: OVS nu rulează</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>openvswitch-switch
+sudo<span class="w"> </span>mn<span class="w"> </span>-c<span class="w">  </span><span class="c1"># Cleanup</span>
+</code></pre></div>
+
+<h4 id="tshark-permission-denied">TShark: "permission denied"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: Permisiuni insuficiente</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-aG<span class="w"> </span>wireshark<span class="w"> </span><span class="nv">$USER</span>
+sudo<span class="w"> </span>setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+newgrp<span class="w"> </span>wireshark
+</code></pre></div>
+
+<h4 id="python-externally-managed-environment">Python: "externally-managed-environment"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: Ubuntu 24.04 protejează pachetele sistem</span>
+<span class="c1"># Soluție 1: Folosește --break-system-packages</span>
+pip3<span class="w"> </span>install<span class="w"> </span>package<span class="w"> </span>--break-system-packages
+
+<span class="c1"># Soluție 2: Folosește venv (recomandat pentru proiecte de producție)</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>~/venv
+<span class="nb">source</span><span class="w"> </span>~/venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>package
+</code></pre></div>
+
+<h4 id="python-cannot-uninstall-x-record-file-not-found">Python: "Cannot uninstall X, RECORD file not found"</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: Conflict între pachete instalate de apt și pip</span>
+<span class="c1"># Soluție: Adaugă --ignore-installed</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>flask
+
+<span class="c1"># Pentru mai multe pachete:</span>
+sudo<span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>package1<span class="w"> </span>package2
+</code></pre></div>
+
+<h4 id="port-53-ocupat-dns">Port 53 ocupat (DNS)</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Cauză: systemd-resolved ocupă portul</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>systemd-resolved
+<span class="c1"># Sau folosește alt port pentru DNS custom (ex: 5353)</span>
+</code></pre></div>
+
+<h4 id="mininet-cleanup">Mininet cleanup</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># După crash sau erori, curăță cu:</span>
+sudo<span class="w"> </span>mn<span class="w"> </span>-c
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>--if-exists<span class="w"> </span>del-br<span class="w"> </span>ovs-br0
+sudo<span class="w"> </span>killall<span class="w"> </span>controller<span class="w"> </span><span class="m">2</span>&gt;/dev/null
+</code></pre></div>
+
+<h3 id="112-comenzi-utile-de-diagnostic">11.2 Comenzi Utile de Diagnostic</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Verificare porturi în uz</span>
+sudo<span class="w"> </span>ss<span class="w"> </span>-tulpn
+sudo<span class="w"> </span>netstat<span class="w"> </span>-tulpn
+
+<span class="c1"># Verificare procese de rețea</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;(python|docker|mn|ovs)&quot;</span>
+
+<span class="c1"># Verificare log-uri sistem</span>
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-xe
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>docker
+sudo<span class="w"> </span>journalctl<span class="w"> </span>-u<span class="w"> </span>openvswitch-switch
+
+<span class="c1"># Verificare spațiu disk</span>
+df<span class="w"> </span>-h
+
+<span class="c1"># Verificare memorie</span>
+free<span class="w"> </span>-h
+
+<span class="c1"># Verificare conectivitate</span>
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">8</span>.8.8.8
+ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span>google.com
+</code></pre></div>
+
+<hr />
+<h2 id="rezumat-comenzi-complete-script-all-in-one">Rezumat Comenzi Complete (Script All-in-One)</h2>
+<p>Pentru comoditate, toate comenzile de instalare într-un singur bloc:</p>
+<div class="codehilite"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="c1"># RULEAZĂ CU: sudo bash install_networking_lab.sh</span>
+
+<span class="nb">set</span><span class="w"> </span>-e
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Actualizare sistem ===&quot;</span>
+apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt<span class="w"> </span>upgrade<span class="w"> </span>-y
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Pachete esențiale ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>software-properties-common<span class="w"> </span>apt-transport-https<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ca-certificates<span class="w"> </span>gnupg<span class="w"> </span>lsb-release<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>git<span class="w"> </span>vim<span class="w"> </span>nano<span class="w"> </span>htop<span class="w"> </span>tree<span class="w"> </span>unzip<span class="w"> </span>zip<span class="w"> </span>jq<span class="w"> </span>make<span class="w"> </span>gcc<span class="w"> </span>g++
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Instrumente rețea ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>iputils-ping<span class="w"> </span>iproute2<span class="w"> </span>net-tools<span class="w"> </span>dnsutils<span class="w"> </span>traceroute<span class="w"> </span>mtr-tiny<span class="w"> </span>whois<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>netcat-openbsd<span class="w"> </span>socat<span class="w"> </span>curl<span class="w"> </span>wget<span class="w"> </span>lftp<span class="w"> </span>openssh-client<span class="w"> </span>tcpdump<span class="w"> </span>iftop<span class="w"> </span>nethogs<span class="w"> </span>nload<span class="w"> </span>bmon<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>nmap<span class="w"> </span>hping3<span class="w"> </span>iperf3<span class="w"> </span>arping<span class="w"> </span>iptables<span class="w"> </span>iptables-persistent<span class="w"> </span>conntrack<span class="w"> </span>bridge-utils<span class="w"> </span>vlan<span class="w"> </span>arptables
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Python ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-venv<span class="w"> </span>python3-dev<span class="w"> </span>python3-setuptools<span class="w"> </span>python3-wheel
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Biblioteci Python ===&quot;</span>
+pip3<span class="w"> </span>install<span class="w"> </span>--break-system-packages<span class="w"> </span>--ignore-installed<span class="w"> </span>scapy<span class="w"> </span>dpkt<span class="w"> </span>pyshark<span class="w"> </span>netifaces<span class="w"> </span>flask<span class="w"> </span>requests<span class="w"> </span>dnslib<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>dnspython<span class="w"> </span>paramiko<span class="w"> </span>pyftpdlib<span class="w"> </span>paho-mqtt<span class="w"> </span>grpcio<span class="w"> </span>grpcio-tools<span class="w"> </span>protobuf<span class="w"> </span>pyyaml<span class="w"> </span>colorama<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>colorlog<span class="w"> </span>tabulate<span class="w"> </span>psutil<span class="w"> </span>os-ken<span class="w"> </span>python-docx
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Docker ===&quot;</span>
+install<span class="w"> </span>-m<span class="w"> </span><span class="m">0755</span><span class="w"> </span>-d<span class="w"> </span>/etc/apt/keyrings
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://download.docker.com/linux/ubuntu/gpg<span class="w"> </span><span class="p">|</span><span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+chmod<span class="w"> </span>a+r<span class="w"> </span>/etc/apt/keyrings/docker.gpg
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;deb [arch=</span><span class="k">$(</span>dpkg<span class="w"> </span>--print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu </span><span class="k">$(</span>.<span class="w"> </span>/etc/os-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2"> stable&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/docker.list<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
+apt<span class="w"> </span>update
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>docker-ce<span class="w"> </span>docker-ce-cli<span class="w"> </span>containerd.io<span class="w"> </span>docker-buildx-plugin<span class="w"> </span>docker-compose-plugin
+systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>docker<span class="w"> </span>containerd
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Mininet &amp; OVS ===&quot;</span>
+apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>mininet<span class="w"> </span>openvswitch-switch<span class="w"> </span>openvswitch-common<span class="w"> </span>openvswitch-testcontroller
+systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>openvswitch-switch
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Wireshark/TShark ===&quot;</span>
+<span class="nv">DEBIAN_FRONTEND</span><span class="o">=</span>noninteractive<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>tshark<span class="w"> </span>wireshark-common
+setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/dumpcap
+setcap<span class="w"> </span>cap_net_raw,cap_net_admin+eip<span class="w"> </span>/usr/bin/tcpdump
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== Configurări finale ===&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv4.ip_forward=1&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;net.ipv6.conf.all.forwarding=1&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/sysctl.d/99-networking.conf
+sysctl<span class="w"> </span>--system
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== INSTALARE COMPLETĂ ===&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Rulează următoarele comenzi manual ca utilizator normal:&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  sudo usermod -aG docker \$USER&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  sudo usermod -aG wireshark \$USER&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  newgrp docker&quot;</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;  newgrp wireshark&quot;</span>
+</code></pre></div>
+
+<hr />
+<p><strong>Document generat pentru cursul de Rețele de Calculatoare, ASE-CSIE București</strong></p>
+<hr>
+<p><em>Document generat pentru cursul de Rețele de Calculatoare, ASE-CSIE București</em></p>
+</body>
+</html>
